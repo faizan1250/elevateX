@@ -79,7 +79,14 @@ exports.login = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid Email' });
 
+    // ❌ Prevent login if user was created via Google or GitHub
+    if (user.provider === 'google') {
+      return res.status(400).json({ message: 'Please log in using Google' });
+    }
 
+    if (user.provider === 'github') {
+      return res.status(400).json({ message: 'Please log in using GitHub' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("Match result:", isMatch);
@@ -88,12 +95,20 @@ exports.login = async (req, res) => {
     if (!user.verified) return res.status(403).json({ message: 'Please verify your email' });
 
     const token = createToken(user);
-    res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 exports.logout = (req, res) => {
   res.clearCookie('token').json({ message: 'Logged out' });
