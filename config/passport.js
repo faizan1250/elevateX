@@ -12,7 +12,7 @@ passport.deserializeUser((id, done) => {
   User.findById(id).then(user => done(null, user));
 });
 
-
+if (process.env.NODE_ENV !== "test") {
 passport.use(
   new GoogleStrategy(
     {
@@ -41,8 +41,8 @@ passport.use(
     }
   )
 );
-
-
+}
+if (process.env.NODE_ENV !== "test") {
 passport.use(new GitHubStrategy({
   clientID: process.env.GITHUB_CLIENT_ID,
   clientSecret: process.env.GITHUB_CLIENT_SECRET,
@@ -88,3 +88,4 @@ passport.use(new GitHubStrategy({
     done(err, null);
   }
 }));
+}

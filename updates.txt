@@ -1,0 +1,9 @@
+✅ Career OS API Endpoints Overview
+Method	Endpoint	Auth	Feature
+POST	/api/career/choose	✅ Yes	Save user's selected career path, goal, interests, and preferences
+GET	/api/career/status	✅ Yes	Check if a career path has been chosen by the logged-in user
+POST	/api/career/generate-plan	✅ Yes	Generate a personalized career roadmap using AI (mock or OpenAI) based on user's saved input
+GET	/api/career/roadmap	✅ Yes	Fetch the current user's full career roadmap (skills, projects, timeline, resources)
+PATCH	/api/skill/update	✅ Yes	Update the progress of a specific skill (e.g., "completed", "in_progress") for the current user
+POST	/api/project/submit	✅ Yes	Submit a project GitHub link for a specific project in the roadmap
+
