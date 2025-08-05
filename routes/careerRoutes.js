@@ -1,20 +1,4 @@
-// const express = require("express");
-// const router = express.Router();
-// const careerController = require("../controllers/careerController");
-// const auth = require("../middleware/auth");
 
-// router.post("/choose", auth, careerController.chooseCareer);
-// router.get("/status", auth, careerController.getCareerStatus);
-// router.post("/generate-plan", auth, careerController.generatePlan);
-// router.get("/roadmap", auth, careerController.getPlan);
-// router.patch("/skill/update", auth, careerController.updateSkill);
-// router.post("/project/submit", auth, careerController.submitProject);
-// router.delete("/plan/delete", auth, careerController.deleteCareerPlan);
-// router.delete("/project/delete", auth, careerController.deleteSubmission);
-// router.get("/progress", auth, careerController.getProgress);
-
-
-// module.exports = router;
 const express = require("express");
 const router = express.Router();
 const careerController = require("../controllers/careerController");
@@ -49,7 +33,7 @@ const auth = require("../middleware/auth");
  *       200:
  *         description: Career choice saved
  */
-router.post("/choose", auth, careerController.chooseCareer);
+router.post("/chooseCareer", auth, careerController.chooseCareer);
 
 /**
  * @swagger
@@ -77,7 +61,7 @@ router.get("/status", auth, careerController.getCareerStatus);
  *       200:
  *         description: Roadmap generated
  */
-router.post("/generate-plan", auth, careerController.generatePlan);
+router.post("/plan", auth, careerController.generatePlan);
 
 /**
  * @swagger
@@ -91,7 +75,7 @@ router.post("/generate-plan", auth, careerController.generatePlan);
  *       200:
  *         description: Career roadmap retrieved
  */
-router.get("/roadmap", auth, careerController.getPlan);
+router.get("/plan", auth, careerController.getPlan);
 
 /**
  * @swagger
@@ -185,5 +169,7 @@ router.delete("/project/delete", auth, careerController.deleteSubmission);
  *         description: Career progress retrieved
  */
 router.get("/progress", auth, careerController.getProgress);
+router.delete("/choice", auth, careerController.deleteCareerChoice);  // 🆕 Reset
+router.put("/choice", auth, careerController.updateCareerChoice);   
 
 module.exports = router;
