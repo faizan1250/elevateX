@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const authRoutes = require('./routes/authRoutes');
 const careerRoutes = require('./routes/careerRoutes');
+const certificateRoutes = require("./routes/certificates");
 const session = require('express-session');
 const passport = require('passport');
 require('./config/passport');
@@ -12,9 +13,12 @@ const app = express();
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use("/certificates", express.static("certificates"));
 
 app.use('/api/auth', authRoutes);
 app.use("/api/career", careerRoutes);
+
+app.use("/api/certificate", certificateRoutes);
 
 app.use(session({
   secret: 'your-secret',

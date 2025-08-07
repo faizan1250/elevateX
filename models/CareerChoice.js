@@ -10,7 +10,8 @@ const CareerChoiceSchema = new mongoose.Schema({
   timeconstraint: { type: String, required: true },
   availabilty: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
-  status: { type: String, default: "submitted" }
+  status: { type: String, default: "submitted" },
+  journeyStarted: { type: Boolean, default: false } // 👈 Add this line
 });
 
 module.exports = mongoose.model("CareerChoice", CareerChoiceSchema);

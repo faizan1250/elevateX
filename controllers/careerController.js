@@ -2,6 +2,8 @@ const CareerChoice = require("../models/CareerChoice");
 const CareerPlan = require("../models/CareerPlan");
 const SkillProgress = require("../models/SkillProgress");
 const ProjectSubmission = require("../models/ProjectSubmission");
+const RoadmapProgress = require("../models/RoadmapProgress");
+const Certificate = require("../models/Certificate");
 
 const { generateCareerPlan } = require("../utils/gemini"); // renamed for clarity
 
@@ -71,35 +73,7 @@ exports.getCareerStatus = async (req, res) => {
 
 
 // ✅ 3. Generate career plan
-// exports.generatePlan = async (req, res) => {
-//   try {
-//     const userId = req.user.id;
-//     const userChoice = await CareerChoice.findOne({ userId });
-//     if (!userChoice) return res.status(404).json({ message: "Career choice not found" });
 
-//     const aiResponse = await generateCareerPlan(userChoice); // now powered by OpenAI
-
-//     let plan;
-//     try {
-//       plan = JSON.parse(aiResponse);
-//     } catch {
-//       plan = {
-//         skills: ["HTML", "CSS", "JavaScript"],
-//         roadmap: [],
-//         projects: [],
-//         resources: [],
-//         note: "⚠️ Raw AI response was not JSON",
-//         raw: aiResponse,
-//       };
-//     }
-
-//     const saved = await CareerPlan.create({ userId, plan });
-//     res.status(201).json({ message: "Career plan generated", plan: saved.plan });
-//   } catch (err) {
-//     console.error("❌ AI Gen Error:", err);
-//     res.status(500).json({ message: "Error generating career plan" });
-//   }
-// };
 exports.generatePlan = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -175,9 +149,10 @@ exports.updateCareerChoice = async (req, res) => {
     const userId = req.user.id;
     const updateData = req.body;
 
+    // Update career choice & reset journeyStarted
     const updated = await CareerChoice.findOneAndUpdate(
       { userId },
-      updateData,
+      { ...updateData, journeyStarted: false },
       { new: true }
     );
 
@@ -185,12 +160,19 @@ exports.updateCareerChoice = async (req, res) => {
       return res.status(404).json({ message: "Career choice not found" });
     }
 
-    res.status(200).json({ message: "Career choice updated", choice: updated });
+    // Delete all certificates for the user to reset certificate list
+    await Certificate.deleteMany({ userId });
+
+    res.status(200).json({ 
+      message: "Career choice updated and certificates reset", 
+      choice: updated 
+    });
   } catch (err) {
     console.error("❌ Error updating career choice:", err);
     res.status(500).json({ message: "Error updating career choice" });
   }
 };
+
 
 
 // ✅ 6. Submit a project
@@ -283,5 +265,121 @@ exports.getProgress = async (req, res) => {
   } catch (err) {
     console.error("❌ Error calculating progress:", err);
     res.status(500).json({ message: "Error calculating progress" });
+  }
+};
+exports.updateRoadmapStep = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { stepTitle, status } = req.body;
+
+    if (!stepTitle || !["not_started", "in_progress", "completed"].includes(status)) {
+      return res.status(400).json({ message: "Invalid data" });
+    }
+
+    const updated = await RoadmapProgress.findOneAndUpdate(
+      { userId, stepTitle },
+      { status, updatedAt: Date.now() },
+      { upsert: true, new: true }
+    );
+
+    res.status(200).json({ message: "Roadmap step updated", step: updated });
+  } catch (err) {
+    console.error("❌ Error updating roadmap step:", err);
+    res.status(500).json({ message: "Error updating roadmap step" });
+  }
+};
+
+exports.getRoadmapProgress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const progress = await RoadmapProgress.find({ userId });
+    res.status(200).json(progress);
+  } catch (err) {
+    console.error("❌ Error fetching roadmap progress:", err);
+    res.status(500).json({ message: "Error fetching roadmap progress" });
+  }
+};
+
+// In your career controller
+exports.startJourney = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const existing = await CareerChoice.findOne({ userId });
+
+    if (!existing) {
+      return res.status(404).json({ message: "Career choice not found" });
+    }
+
+    if (existing.journeyStarted) {
+      return res.status(200).json({ message: "Journey already started", journeyStarted: true });
+    }
+
+    existing.journeyStarted = true;
+    await existing.save();
+
+    return res.status(200).json({
+      message: "Journey started successfully",
+      journeyStarted: true,
+    });
+  } catch (err) {
+    console.error("❌ Error starting journey:", err);
+    return res.status(500).json({ message: "Failed to start journey" });
+  }
+};
+exports.getJourneyStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const choice = await CareerChoice.findOne({ userId });
+
+    if (!choice) {
+      return res.status(404).json({ message: 'Career choice not found' });
+    }
+
+    return res.status(200).json({ journeyStarted: choice.journeyStarted });
+  } catch (err) {
+    console.error('❌ Error fetching journey status:', err);
+    return res.status(500).json({ message: 'Error fetching journey status' });
+  }
+};
+exports.getJourneyDashboard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [plan, skillProgress, projects, careerChoice] = await Promise.all([
+      CareerPlan.findOne({ userId }),
+      SkillProgress.find({ userId }),
+      ProjectSubmission.find({ userId }),
+      CareerChoice.findOne({ userId }) // ⬅️ fetch career goal here
+    ]);
+
+    if (!plan) {
+      return res.status(404).json({ message: "Career plan not found" });
+    }
+
+    const completedSkills = skillProgress.filter(s => s.status === 'completed').length;
+    const inProgressSkills = skillProgress.filter(s => s.status === 'in_progress').length;
+
+    const miniProjects = plan.plan?.projects?.length || 0;
+    const resumeScore = 80;
+    const skills = plan.plan?.skills || [];
+    const allProjects = projects || [];
+    const certificates = [];
+
+    const careerGoal = careerChoice?.careergoal || null; // 🆕 extract goal
+
+    return res.status(200).json({
+      completedSkills,
+      inProgressSkills,
+      miniProjects,
+      resumeScore,
+      skills,
+      projects: allProjects,
+      certificates,
+      goal: careerGoal // 🆕 include goal
+    });
+  } catch (err) {
+    console.error("❌ Error fetching journey dashboard:", err);
+    return res.status(500).json({ message: "Error fetching journey dashboard" });
   }
 };
