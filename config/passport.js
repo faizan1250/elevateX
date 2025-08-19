@@ -12,36 +12,85 @@ passport.deserializeUser((id, done) => {
   User.findById(id).then(user => done(null, user));
 });
 
+// if (process.env.NODE_ENV !== "test") {
+// passport.use(
+//   new GoogleStrategy(
+//     {
+//       clientID: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//       callbackURL: process.env.GOOGLE_CALLBACK_URL,
+//     },
+//     async (accessToken, refreshToken, profile, done) => {
+//       try {
+//         let user = await User.findOne({ googleId: profile.id });
+
+//         if (!user) {
+//           user = await User.create({
+//             provider: 'google',
+//             googleId: profile.id,
+//             username: profile.displayName,
+//             email: profile.emails?.[0]?.value || '', // safer fallback
+//             verified: true, 
+//           });
+//         }
+
+//         return done(null, user);
+//       } catch (err) {
+//         return done(err, null);
+//       }
+//     }
+//   )
+// );
+// }
+
 if (process.env.NODE_ENV !== "test") {
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        let user = await User.findOne({ googleId: profile.id });
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: process.env.GOOGLE_CALLBACK_URL,
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        try {
+          const email = profile.emails?.[0]?.value || '';
+          let user = await User.findOne({ googleId: profile.id });
 
-        if (!user) {
-          user = await User.create({
-            provider: 'google',
-            googleId: profile.id,
-            username: profile.displayName,
-            email: profile.emails?.[0]?.value || '', // safer fallback
-            verified: true, 
-          });
+          if (!user) {
+            // Check if an account exists with same email
+            let existingEmailUser = await User.findOne({ email });
+
+            if (existingEmailUser) {
+              // ⚠ This is where you handle the warning
+              // Instead of auto-linking, you could store a flag
+              existingEmailUser.googleId = profile.id;
+              existingEmailUser.provider = 'google';
+              await existingEmailUser.save();
+
+              existingEmailUser._linkedFromEmail = true; // for backend/frontend signal
+              return done(null, existingEmailUser);
+            }
+
+            // No user with same email → create new Google user
+            user = await User.create({
+              provider: 'google',
+              googleId: profile.id,
+              username: profile.displayName,
+              email,
+              verified: true,
+            });
+          }
+
+          return done(null, user);
+        } catch (err) {
+          return done(err, null);
         }
-
-        return done(null, user);
-      } catch (err) {
-        return done(err, null);
       }
-    }
-  )
-);
+    )
+  );
 }
+
+
 if (process.env.NODE_ENV !== "test") {
 passport.use(new GitHubStrategy({
   clientID: process.env.GITHUB_CLIENT_ID,

@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
@@ -20,7 +18,17 @@ const userSchema = new mongoose.Schema({
   githubId: { type: String },
   verified: { type: Boolean, default: false },
 
-});
+  // 🆕 Profile features
+  profilePicture: { type: String, default: '' }, // URL to Cloudinary/S3
+  links: [
+    {
+      platform: { type: String }, // e.g. "GitHub", "LeetCode"
+      url: { type: String }
+    }
+  ],
 
+  // 🆕 Friends list
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // accepted friends only
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

@@ -34,23 +34,21 @@
 // };
 
 // startServer();
-const dotenv = require("dotenv");
-
-if (process.env.NODE_ENV === "test") {
-  dotenv.config({ path: ".env.test" });
-} else {
-  dotenv.config();
-}
-
+// server.js
+require('dotenv').config();
 const mongoose = require('mongoose');
-const app = require('./app');
+const { app, server } = require('./app'); // destructure both
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI)
+mongoose
+  .connect(MONGO_URI)
   .then(() => {
-    console.log('MongoDB connected');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    console.log('✅ MongoDB connected');
+    server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   })
-  .catch(console.error);
+  .catch((err) => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });

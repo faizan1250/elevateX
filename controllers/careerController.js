@@ -350,24 +350,21 @@ exports.getJourneyDashboard = async (req, res) => {
       CareerPlan.findOne({ userId }),
       SkillProgress.find({ userId }),
       ProjectSubmission.find({ userId }),
-      CareerChoice.findOne({ userId }) // ⬅️ fetch career goal here
+      CareerChoice.findOne({ userId }) // fetch career goal
     ]);
 
-    if (!plan) {
-      return res.status(404).json({ message: "Career plan not found" });
-    }
-
-    const completedSkills = skillProgress.filter(s => s.status === 'completed').length;
-    const inProgressSkills = skillProgress.filter(s => s.status === 'in_progress').length;
-
-    const miniProjects = plan.plan?.projects?.length || 0;
+    // Default counts
+    const completedSkills = skillProgress?.filter(s => s.status === 'completed').length || 0;
+    const inProgressSkills = skillProgress?.filter(s => s.status === 'in_progress').length || 0;
+    const miniProjects = plan?.plan?.projects?.length || 0;
     const resumeScore = 80;
-    const skills = plan.plan?.skills || [];
+    const skills = plan?.plan?.skills || [];
     const allProjects = projects || [];
     const certificates = [];
 
-    const careerGoal = careerChoice?.careergoal || null; // 🆕 extract goal
+    const careerGoal = careerChoice?.careergoal || null;
 
+    // Always return a valid object, even for new users
     return res.status(200).json({
       completedSkills,
       inProgressSkills,
@@ -376,10 +373,12 @@ exports.getJourneyDashboard = async (req, res) => {
       skills,
       projects: allProjects,
       certificates,
-      goal: careerGoal // 🆕 include goal
+      goal: careerGoal
     });
+
   } catch (err) {
     console.error("❌ Error fetching journey dashboard:", err);
     return res.status(500).json({ message: "Error fetching journey dashboard" });
   }
 };
+

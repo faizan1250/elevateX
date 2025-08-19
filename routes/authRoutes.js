@@ -28,19 +28,37 @@ router.get('/me', auth, async (req, res) => {
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
+// router.get(
+//   '/google/callback',
+//   passport.authenticate('google', { session: false, failureRedirect: '/login' }),
+//   (req, res) => {
+//     const user = req.user;
+//     console.log("OAuth user:", user);
+
+//     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+//       expiresIn: '7d',
+//     });
+
+//     // Redirect to frontend with the token
+//     res.redirect(`http://localhost:5173/oauth-success?token=${token}&provider=google`);
+//   }
+// );
 router.get(
   '/google/callback',
   passport.authenticate('google', { session: false, failureRedirect: '/login' }),
   (req, res) => {
     const user = req.user;
-    console.log("OAuth user:", user);
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '7d',
     });
 
-    // Redirect to frontend with the token
-    res.redirect(`http://localhost:5173/oauth-success?token=${token}&provider=google`);
+    // Let frontend know if this was an existing email account linked to Google
+    const linkedFlag = user._linkedFromEmail ? 'true' : 'false';
+
+    res.redirect(
+      `http://localhost:5173/oauth-success?token=${token}&provider=google&linked=${linkedFlag}`
+    );
   }
 );
 
