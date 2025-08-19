@@ -96,7 +96,7 @@ io.on('connection', (socket) => {
     console.log(`🔴 Socket disconnected: ${socket.id} (user: ${userId}) Reason: ${reason}`);
     // ❌ No need to delete from onlineUsers anymore
   });
-});
+}); 
 
 // 🔔 Notification helper used by controllers
 app.set('sendNotification', (userId, payload) => {
