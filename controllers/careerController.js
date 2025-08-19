@@ -4,6 +4,7 @@ const SkillProgress = require("../models/SkillProgress");
 const ProjectSubmission = require("../models/ProjectSubmission");
 const RoadmapProgress = require("../models/RoadmapProgress");
 const Certificate = require("../models/Certificate");
+const { bootstrapFromPlanForUser } = require("../learning/services/bootstrapService");
 
 const { generateCareerPlan } = require("../utils/gemini"); // renamed for clarity
 
@@ -303,24 +304,34 @@ exports.getRoadmapProgress = async (req, res) => {
 // In your career controller
 exports.startJourney = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const existing = await CareerChoice.findOne({ userId });
-
     if (!existing) {
       return res.status(404).json({ message: "Career choice not found" });
     }
 
     if (existing.journeyStarted) {
-      return res.status(200).json({ message: "Journey already started", journeyStarted: true });
+      // Optionally still run a sync to keep Learning in line with the latest plan:
+      // const sync = await bootstrapFromPlanForUser(userId, { mode: "sync" });
+      return res.status(200).json({
+        message: "Journey already started",
+        journeyStarted: true,
+        // sync, // include if you run it
+      });
     }
 
     existing.journeyStarted = true;
     await existing.save();
 
+    // 🔥 Immediately sync Learning modules/skills from the current plan
+    const bootstrap = await bootstrapFromPlanForUser(userId, { mode: "sync" });
+
     return res.status(200).json({
       message: "Journey started successfully",
       journeyStarted: true,
+      bootstrap, // useful to inspect on FE if you want
     });
   } catch (err) {
     console.error("❌ Error starting journey:", err);

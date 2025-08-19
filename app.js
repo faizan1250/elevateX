@@ -125,6 +125,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/career', careerRoutes);
 app.use('/api/certificate', certificateRoutes);
 app.use('/api/profile', require('./routes/profile'));
+const learningRoutes = require("./learning/routes");
+app.use("/api/learning", learningRoutes);
 app.use('/api/friends', require('./routes/friends'));
 app.use('/api/notifications', require('./routes/notifications'));
 
