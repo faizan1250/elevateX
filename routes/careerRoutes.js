@@ -27,6 +27,7 @@ router.delete("/project/delete", auth, careerController.deleteSubmission);
 
 router.get("/progress", auth, careerController.getProgress);
 router.delete("/choice", auth, careerController.deleteCareerChoice);  // 🆕 Reset
+router.delete("/reset", auth, careerController.resetUserCareer);
 router.put("/choice", auth, careerController.updateCareerChoice);  
 router.post('/roadmap/update', auth, careerController.updateRoadmapStep);
 

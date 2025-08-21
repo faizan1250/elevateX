@@ -207,7 +207,155 @@ exports.deleteCareerPlan = async (req, res) => {
     res.status(500).json({ message: "Error deleting career plan" });
   }
 };
+
+
+
+
+
+// controllers/career.js
+const mongoose = require("mongoose");
+
+// Add the extras you actually have:
+//const LearningJourney = require("../models/LearningJourney");
+//const JourneyStatus = require("../models/JourneyStatus");
+//const ProjectProgress = require("../models/ProjectProgress");
+const TopicProgress = require("../learning/models/TopicProgress");
+
+// const cache = require("../lib/cache"); // e.g., Redis, if you’re caching
+const Skill = require("../learning/models/Skill");
+// exports.resetUserCareer = async (req, res) => {
+//   //i also want thus controller to reset ../learning/models/Skill contents. i have imported that model you just do that too 
+//   //if there isnt any Skill object present then just do the current functionalities but if there are then reset that too
+//   const userId = req.user?.id;
+//   if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+//   const session = await mongoose.startSession();
+
+//   try {
+//     let deleted = { careerPlan: 0, careerChoice: 0, topicProgress: 0 };
+
+//     await session.withTransaction(async () => {
+//       const [plan, choice, tp] = await Promise.all([
+//         CareerPlan.deleteOne({ userId }).session(session),
+//         CareerChoice.deleteOne({ userId }).session(session),
+//         TopicProgress.deleteMany({ userId }).session(session),
+//       ]);
+
+//       deleted.careerPlan = plan.deletedCount || 0;
+//       deleted.careerChoice = choice.deletedCount || 0;
+//       deleted.topicProgress = tp.deletedCount || 0;
+//     });
+
+//     session.endSession();
+
+//     return res.status(200).json({
+//       message: "User reset to brand-new state",
+//       deleted,
+//     });
+//   } catch (err) {
+//     session.endSession();
+//     console.error("❌ Reset error:", err);
+//     return res.status(500).json({ message: "Error resetting user state" });
+//   }
+// };
+
+
+
+
 // DELETE /api/career/choice
+
+
+exports.resetUserCareer = async (req, res) => {
+  const userId = req.user?.id;
+  if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+  // optional preview: /api/career/choice?dryRun=true
+  if (req.query.dryRun === "true") {
+    const [cp, cc, tp, sp, sk] = await Promise.all([
+      CareerPlan.countDocuments({ userId }),
+      CareerChoice.countDocuments({ userId }),
+      TopicProgress.countDocuments({ userId }),
+      SkillProgress.countDocuments({ userId }),
+      Skill.countDocuments({ userId }),
+    ]);
+    return res.json({
+      dryRun: true,
+      wouldDelete: {
+        careerPlan: cp,
+        careerChoice: cc,
+        topicProgress: tp,
+        skillProgress: sp,
+        skills: sk,
+      },
+    });
+  }
+
+  const session = await mongoose.startSession();
+
+  // helper so we can reuse for txn + fallback
+  const runDeletes = async (sess) => {
+    const opt = sess ? { session: sess } : undefined;
+
+    const [plan, choice, tp, sp, sk] = await Promise.all([
+      CareerPlan.deleteOne({ userId }, opt),      // remove generated plan
+      CareerChoice.deleteOne({ userId }, opt),    // remove chosen path
+      TopicProgress.deleteMany({ userId }, opt),  // clear topic progress
+      SkillProgress.deleteMany({ userId }, opt),  // clear per-skill status/progress
+      Skill.deleteMany({ userId }, opt),          // delete only THIS user's skills
+    ]);
+
+    return {
+      careerPlan: plan.deletedCount || 0,
+      careerChoice: choice.deletedCount || 0,
+      topicProgress: tp.deletedCount || 0,
+      skillProgress: sp.deletedCount || 0,
+      skills: sk.deletedCount || 0,
+    };
+  };
+
+  try {
+    let deleted;
+    await session.withTransaction(async () => {
+      deleted = await runDeletes(session);
+    });
+    session.endSession();
+
+    // keep response shape friendly; nothing else in your app should choke on this
+    return res.status(200).json({
+      message: "Career choice and related data deleted",
+      deleted,
+    });
+  } catch (err) {
+    // fallback if not running a replica set
+    const noTxn =
+      /Transaction numbers are only allowed|ReplicaSetMonitor|not supported/i.test(
+        String(err && (err.message || err))
+      );
+
+    if (noTxn) {
+      try {
+        const deleted = await runDeletes(null);
+        session.endSession();
+        return res.status(200).json({
+          message:
+            "Career choice and related data deleted (no transaction available)",
+          deleted,
+        });
+      } catch (fallbackErr) {
+        session.endSession();
+        console.error("❌ Choice delete fallback error:", fallbackErr);
+        return res
+          .status(500)
+          .json({ message: "Failed to delete career choice (fallback)" });
+      }
+    }
+
+    session.endSession();
+    console.error("❌ Choice delete error:", err);
+    return res.status(500).json({ message: "Failed to delete career choice" });
+  }
+};
+
 exports.deleteCareerChoice = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -353,6 +501,22 @@ exports.getJourneyStatus = async (req, res) => {
     return res.status(500).json({ message: 'Error fetching journey status' });
   }
 };
+// controllers/career.js (or wherever your controller lives)
+
+
+/* ----------------- helpers ----------------- */
+
+// Accept either an object by level or a flat array. Always return { foundation, intermediate, advanced, soft_skills }
+// controllers/career.js
+
+// import your models however you normally do:
+
+
+
+
+
+/* ========================= helpers ========================= */
+// controllers/career.js
 exports.getJourneyDashboard = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -392,4 +556,3 @@ exports.getJourneyDashboard = async (req, res) => {
     return res.status(500).json({ message: "Error fetching journey dashboard" });
   }
 };
-

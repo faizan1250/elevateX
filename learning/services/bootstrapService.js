@@ -59,8 +59,9 @@ async function upsertModuleByTitle(userId, title, description = "") {
 }
 
 const bucketDifficultyFor = (title) =>
-  /foundation/i.test(title) ? "beginner" :
-  /advanced/i.test(title)   ? "advanced" : "intermediate";
+   /soft/i.test(title)        ? "soft_skills" :
+  /foundation/i.test(title)  ? "beginner"    :
+  /advanced/i.test(title)    ? "advanced"    : "intermediate";
 
 async function syncModuleSkills(userId, moduleTitle, desiredNames, { deleteRemovedTopics = false } = {}) {
   if (!desiredNames.length) return { mod: null, added: 0, removed: 0, updated: 0 };

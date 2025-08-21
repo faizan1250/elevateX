@@ -17,41 +17,103 @@ exports.createSkill = async (req, res) => {
 };
 
 // Get all skills
+// exports.getSkills = async (req, res) => {
+//   try {
+//     const { moduleId, q, difficulty, sort = "-updatedAt" } = req.query;
+
+//     // userId comes from auth or query
+//     const userIdRaw = req.user?.id || req.query.userId || null;
+//     const hasUser = !!(userIdRaw && mongoose.Types.ObjectId.isValid(userIdRaw));
+//     const userId = hasUser ? new mongoose.Types.ObjectId(userIdRaw) : null;
+
+//     const filter = {};
+//     if (moduleId && mongoose.Types.ObjectId.isValid(moduleId)) {
+//       filter.moduleId = new mongoose.Types.ObjectId(moduleId);
+//     } else if (moduleId) {
+//       filter.moduleId = moduleId;
+//     }
+//     if (difficulty) filter.difficulty = difficulty;
+//     if (q) filter.name = { $regex: q, $options: "i" };
+
+//     const skills = await Skill.find(filter).sort(sort).lean().exec();
+
+//     if (!hasUser || !skills.length) {
+//       return res.json({
+//         items: skills.map((s) => ({ ...s, progress: 0, status: "not_started" })),
+//       });
+//     }
+
+//     const skillIds = skills.map((s) => s._id);
+//     const progressDocs = await SkillProgress.find({
+//       userId,
+//       skillId: { $in: skillIds },
+//     }).select("skillId progress status").lean();
+
+//     const map = new Map(progressDocs.map((p) => [String(p.skillId), p]));
+
+//     const merged = skills.map((s) => {
+//       const p = map.get(String(s._id));
+//       return {
+//         ...s,
+//         progress: typeof p?.progress === "number" ? p.progress : 0,
+//         status: p?.status ?? "not_started",
+//       };
+//     });
+
+//     return res.json({ items: merged });
+//   } catch (err) {
+//     console.error("getSkills error:", err);
+//     return res.status(500).json({ message: err.message || "Failed to fetch skills" });
+//   }
+// };
+// Get only the current user's skills (plus progress merge)
 exports.getSkills = async (req, res) => {
   try {
     const { moduleId, q, difficulty, sort = "-updatedAt" } = req.query;
 
-    // userId comes from auth or query
+    // Prefer auth; fall back to explicit query param if provided
     const userIdRaw = req.user?.id || req.query.userId || null;
     const hasUser = !!(userIdRaw && mongoose.Types.ObjectId.isValid(userIdRaw));
     const userId = hasUser ? new mongoose.Types.ObjectId(userIdRaw) : null;
 
+    // Build filter
     const filter = {};
+    if (hasUser) {
+      // crucial: scope to this user so we don't leak other users' skills
+      filter.userId = userId;
+    }
     if (moduleId && mongoose.Types.ObjectId.isValid(moduleId)) {
       filter.moduleId = new mongoose.Types.ObjectId(moduleId);
     } else if (moduleId) {
+      // if your moduleId is stored as string somewhere, fine, keep it
       filter.moduleId = moduleId;
     }
     if (difficulty) filter.difficulty = difficulty;
     if (q) filter.name = { $regex: q, $options: "i" };
 
-    const skills = await Skill.find(filter).sort(sort).lean().exec();
-
-    if (!hasUser || !skills.length) {
-      return res.json({
-        items: skills.map((s) => ({ ...s, progress: 0, status: "not_started" })),
-      });
+    // If no user is supplied, this is a user-scoped collection — don't leak everyone's skills
+    if (!hasUser) {
+      return res.json({ items: [] });
     }
 
-    const skillIds = skills.map((s) => s._id);
+    const skills = await Skill.find(filter).sort(sort).lean().exec();
+
+    if (!skills.length) {
+      return res.json({ items: [] });
+    }
+
+    // Merge per-skill progress/status for this user
+    const skillIds = skills.map(s => s._id);
     const progressDocs = await SkillProgress.find({
       userId,
       skillId: { $in: skillIds },
-    }).select("skillId progress status").lean();
+    })
+      .select("skillId progress status")
+      .lean();
 
-    const map = new Map(progressDocs.map((p) => [String(p.skillId), p]));
+    const map = new Map(progressDocs.map(p => [String(p.skillId), p]));
 
-    const merged = skills.map((s) => {
+    const merged = skills.map(s => {
       const p = map.get(String(s._id));
       return {
         ...s,
@@ -63,9 +125,13 @@ exports.getSkills = async (req, res) => {
     return res.json({ items: merged });
   } catch (err) {
     console.error("getSkills error:", err);
-    return res.status(500).json({ message: err.message || "Failed to fetch skills" });
+    return res
+      .status(500)
+      .json({ message: err.message || "Failed to fetch skills" });
   }
 };
+
+
 
 exports.getSkill = async (req, res)=> {
   try {
