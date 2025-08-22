@@ -168,25 +168,146 @@ Fill the JSON fully and validly.
 
 /* ------------------------ Skill study material (AI) ------------------------ */
 
-async function generateSkillMaterial(skillName, difficulty = "intermediate") {
+
+
+function coerceArray(x) {
+  if (!x) return [];
+  if (Array.isArray(x)) return x.map(String).filter(Boolean);
+  return String(x).split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+}
+
+function normalizeConcepts(concepts) {
+  if (!concepts) return [];
+  if (Array.isArray(concepts)) {
+    return concepts
+      .map(c => {
+        if (!c) return null;
+        if (typeof c === "string") {
+          // accept "Term: definition" strings
+          const m = c.match(/^\s*\**\s*([^:]+)\s*:\s*(.+)$/);
+          return m ? { term: m[1].trim(), definition: m[2].trim() } : null;
+        }
+        if (typeof c === "object") {
+          const term = (c.term || c.name || "").toString().trim();
+          const definition = (c.definition || c.desc || "").toString().trim();
+          if (!term || !definition) return null;
+          return { term, definition };
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+  // string list
+  return normalizeConcepts(coerceArray(concepts));
+}
+
+function normalizeMaterial(obj, fallbackTitle, fallbackDifficulty) {
+  const safe = {
+    title: (obj.title || fallbackTitle || "").toString().trim(),
+    difficulty: (obj.difficulty || fallbackDifficulty || "").toString().trim(),
+    whatWhy: (obj.whatWhy || obj.what || "").toString().trim(),
+    concepts: normalizeConcepts(obj.concepts),
+    steps: coerceArray(obj.steps),
+    tasks: coerceArray(obj.tasks),
+    pitfalls: coerceArray(obj.pitfalls),
+  };
+  // minimal sanity checks
+  if (!safe.title) throw new AIGenerationError("AI returned empty title", "AI_EMPTY_TITLE", 502);
+  if (!safe.whatWhy) throw new AIGenerationError("AI returned empty What/Why", "AI_EMPTY_WHY", 502);
+  return safe;
+}
+
+async function generateSkillMaterial( skillName, difficulty = "intermediate") {
   if (!genAI) {
     throw new AIGenerationError("Missing GEMINI_API_KEY env", "AI_KEY_MISSING", 502);
   }
 
   const prompt = `
-You are a senior instructor. Write concise study material for the skill:
+You are a senior instructor. Return ONLY a single JSON object that matches this schema:
 
-Skill: "${skillName}"
+{
+  "title": string,               // concise skill title
+  "difficulty": string,          // beginner | intermediate | advanced | expert (or input)
+  "whatWhy": string,             // 2–4 sentences on what it is and why it matters
+  "concepts": [                  // 5–10 key concepts
+    { "term": string, "definition": string }
+  ],
+  "steps": [string],             // 5–8 numbered learning steps (imperative voice)
+  "tasks": [string],             // 3–5 small practice tasks
+  "pitfalls": [string]           // 4–8 common mistakes
+}
+
+Constraints:
+- Output must be valid JSON. No markdown, no backticks, no extra text.
+- Keep items concise but clear.
+
+Input:
+- Skill: "${skillName}"
+- Difficulty: "${difficulty}"
+`.trim();
+
+  const call = async (temp) => {
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        maxOutputTokens: 2048,
+        temperature: temp,
+      },
+    });
+    return result;
+  };
+
+  const textFrom = (r) => {
+    try {
+      // Gemini SDKs differ; be defensive
+      const cand = r?.response?.candidates?.[0];
+      const part = cand?.content?.parts?.[0]?.text ?? r?.text ?? r?.response?.text;
+      return typeof part === "string" ? part : "";
+    } catch { return ""; }
+  };
+
+  try {
+    const r1 = await call(0.4);
+    const t1 = textFrom(r1);
+    let parsed;
+    try { parsed = JSON.parse(t1); } catch { /* fall through */ }
+    if (!parsed) throw new AIGenerationError("AI returned non-JSON", "AI_NOT_JSON", 502);
+    const normalized = normalizeMaterial(parsed, skillName, difficulty);
+    return { normalized, rawJson: parsed, rawText: t1 };
+  } catch (err) {
+    // fallback attempt with slightly different settings
+    const r2 = await call(0.3);
+    const t2 = textFrom(r2);
+    let parsed2;
+    try { parsed2 = JSON.parse(t2); } catch { /* nope */ }
+    if (!parsed2) throw err;
+    const normalized2 = normalizeMaterial(parsed2, skillName, difficulty);
+    return { normalized: normalized2, rawJson: parsed2, rawText: t2 };
+  }
+}
+
+/* ------------------------- Topic summary generation ------------------------- */
+
+async function generateTopicSummary(topicName, difficulty = "intermediate") {
+  if (!genAI) {
+    throw new AIGenerationError("Missing GEMINI_API_KEY env", "AI_KEY_MISSING", 502);
+  }
+
+  const prompt = `
+You are a subject-matter expert. Write a **concise, learner-friendly summary** of the following topic:
+
+Topic: "${topicName}"
 Difficulty: "${difficulty}"
 
 Include:
-- What/why (short)
-- Key concepts (bulleted)
-- Step-by-step learning path (numbered, 5–8 steps)
-- Small practice tasks (3–5 items)
-- Common pitfalls
+- A short explanation (what/why)
+- 3–5 key concepts
+- 2–3 real-world applications/examples
+- 2–3 small practice questions/tasks
 
-Keep it clear and scannable. Use markdown headings and lists. No code fences unless showing code.
+Keep the response clear, scannable, and suitable for beginners. Return text in markdown format (no code fences).
 `.trim();
 
   try {
@@ -195,7 +316,7 @@ Keep it clear and scannable. Use markdown headings and lists. No code fences unl
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         responseMimeType: "text/markdown",
-        maxOutputTokens: 2048,
+        maxOutputTokens: 1024,
         temperature: 0.5,
       },
     });
@@ -204,20 +325,15 @@ Keep it clear and scannable. Use markdown headings and lists. No code fences unl
     if (!text) throw new AIGenerationError("No text response from Gemini", "AI_EMPTY", 502);
     return text;
   } catch (err) {
-    // simple fallback attempt
-    const result2 = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 2048, temperature: 0.4 },
-    });
-    const text2 = textFrom(result2);
-    if (!text2) throw new AIGenerationError("No text response from Gemini", "AI_EMPTY", 502);
-    return text2;
+    console.error("[AI] Topic summary generation failed:", err);
+    throw new AIGenerationError("Failed to generate topic summary", "AI_ERROR", 502, { cause: err.message });
   }
 }
+
 
 module.exports = {
   generateTopicsForSkill,
   generateSkillMaterial,
   AIGenerationError,
+  generateTopicSummary
 };

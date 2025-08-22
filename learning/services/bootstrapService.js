@@ -1,6 +1,6 @@
 // learning/services/bootstrapService.js
 const mongoose = require("mongoose");
-const CareerPlan = require("../../models/CareerPlan");
+//const CareerPlan = require("../../models/CareerPlan");
 const Module = require("../models/Module");
 const Skill = require("../models/Skill");
 // const Topic = require("../models/Topic"); // only if you want topic deletions

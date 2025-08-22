@@ -138,15 +138,32 @@ exports.deleteTopic = async (req, res) => {
 };
 
 // AI generate summary/learning material
+// AI generate summary/learning material with caching
 exports.generateTopicSummary = async (req, res) => {
   try {
     const { topicId } = req.params;
     const topic = await Topic.findById(topicId);
-    if (!topic) return res.status(404).json({ message: 'Topic not found' });
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
 
-    const summary = await aiService.generateTopicSummary(topic.name);
-    res.json({ topic, summary });
+    // Check cache first
+    if (topic.generatedContent?.summary) {
+      return res.json({ topic, summary: topic.generatedContent.summary, cached: true });
+    }
+
+    // Call AI service if no cache
+    const summary = await aiService.generateTopicSummary(topic.name, topic.difficulty);
+
+    // Save into topic doc
+    topic.generatedContent = {
+      ...(topic.generatedContent || {}),
+      summary,
+    };
+    await topic.save();
+
+    res.json({ topic, summary, cached: false });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("generateTopicSummary error:", err);
+    res.status(500).json({ message: err.message || "Failed to generate topic summary" });
   }
 };
+

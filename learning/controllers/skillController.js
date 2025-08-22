@@ -4,6 +4,7 @@ const Topic = require('../models/Topic')
 const TopicProgress = require("../models/TopicProgress");
 const { recomputeSkillProgress } = require("../services/learningUtils");
 const aiService = require('../services/aiService');
+const { generateSkillMaterial, AIGenerationError } = require('../services/aiService');
 const mongoose = require("mongoose");
 // Create a new skill
 exports.createSkill = async (req, res) => {
@@ -133,17 +134,51 @@ exports.getSkills = async (req, res) => {
 
 
 
-exports.getSkill = async (req, res)=> {
+// controllers/skillController.js
+
+
+exports.getSkill = async (req, res) => {
   try {
     const { id } = req.params;
-    const skill = await Skill.findById(id).lean();
-    if (!skill) return res.status(404).json({ message: 'Skill not found' });
-    return res.json(skill);
+    
+     
+    // Validate skill id early
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid skill id" });
+    }
+
+    // Prefer auth; fall back to explicit query param if provided (still validate)
+    const userIdRaw = req.user?.id || req.query.userId || null;
+    const hasUser = !!(userIdRaw && mongoose.Types.ObjectId.isValid(userIdRaw));
+    if (!hasUser) {
+      // Single-resource endpoint: don't leak existence without a valid user scope
+      return res.status(404).json({ message: "Skill not found" });
+    }
+    const userId = new mongoose.Types.ObjectId(userIdRaw);
+
+    // Scope by user so we never return someone else's skill
+    const skill = await Skill.findOne({ _id: id, userId }).lean();
+    if (!skill) {
+      return res.status(404).json({ message: "Skill not found" });
+    }
+
+    // Merge per-skill progress/status for this user
+    const progressDoc = await SkillProgress.findOne({ userId, skillId: skill._id })
+      .select("progress status")
+      .lean();
+
+    const merged = {
+      ...skill,
+      progress: typeof progressDoc?.progress === "number" ? progressDoc.progress : 0,
+      status: progressDoc?.status ?? "not_started",
+    };
+
+    return res.json(merged);
   } catch (err) {
-    console.error('getSkillById error:', err);
-    return res.status(500).json({ message: err.message || 'Failed to fetch skill' });
+    console.error("getSkill error:", err);
+    return res.status(500).json({ message: err.message || "Failed to fetch skill" });
   }
-}
+};
 
 // Update skill
 exports.updateSkill = async (req, res) => {
@@ -249,32 +284,49 @@ exports.updateProgress = async (req, res) => {
 exports.generateSkillContent = async (req, res) => {
   try {
     const { skillId } = req.params;
-    let skill = await Skill.findById(skillId);
+    const skill = await Skill.findById(skillId);
     if (!skill) return res.status(404).json({ message: "Skill not found" });
 
-    // check cache
-    if (skill.generatedContent) {
-      return res.json({ skill, content: skill.generatedContent });
+    // cache hit if we already have normalized JSON
+    if (skill.generatedContent?.studyMaterialJson) {
+      return res.json({
+        cached: true,
+        skill: { id: skill.id, name: skill.name, difficulty: skill.difficulty || "intermediate" },
+        material: {
+          json: skill.generatedContent.studyMaterialJson,
+          text: skill.generatedContent.studyMaterialText || "", // optional
+        },
+      });
     }
 
-    // generate fresh content
-    const content = await aiService.generateSkillMaterial(
+    // generate fresh content (normalized JSON + raw)
+    const { normalized, rawText } = await generateSkillMaterial(
+      req.app.get("genAI"),
       skill.name,
       skill.difficulty || "intermediate"
     );
 
-    // save to DB
-    skill.generatedContent = content;
+    skill.generatedContent = {
+      ...(skill.generatedContent || {}),
+      studyMaterialJson: normalized,
+      studyMaterialText: rawText
+    };
     await skill.save();
 
-    return res.json({ skill, content });
+    return res.json({
+      cached: false,
+      skill: { id: skill.id, name: skill.name, difficulty: skill.difficulty || "intermediate" },
+      material: { json: normalized, text: rawText }
+    });
   } catch (err) {
     if (err instanceof AIGenerationError) {
-      return res
-        .status(err.status || 502)
-        .json({ message: err.message, code: err.code, ...(err.meta ? { meta: err.meta } : {}) });
+      return res.status(err.status || 502).json({
+        message: err.message,
+        code: err.code,
+        ...(err.meta ? { meta: err.meta } : {}),
+      });
     }
     console.error("generateSkillContent error:", err);
-    return res.status(500).json({ message: err.message || "Failed to generate AI content" });
+    return res.status(500).json({ message: "Failed to generate AI content" });
   }
 };
