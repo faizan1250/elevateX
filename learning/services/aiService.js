@@ -222,26 +222,32 @@ async function generateSkillMaterial( skillName, difficulty = "intermediate") {
     throw new AIGenerationError("Missing GEMINI_API_KEY env", "AI_KEY_MISSING", 502);
   }
 
-  const prompt = `
-You are a senior instructor. Return ONLY a single JSON object that matches this schema:
+const prompt = `
+You are a senior instructor creating structured learning content. Return ONLY a valid JSON object that matches this exact schema:
 
 {
-  "title": string,               // concise skill title
-  "difficulty": string,          // beginner | intermediate | advanced | expert (or input)
-  "whatWhy": string,             // 2–4 sentences on what it is and why it matters
-  "concepts": [                  // 5–10 key concepts
-    { "term": string, "definition": string }
+  "title": string,               // concise skill title (based on input skill)
+  "difficulty": string,          // must match input: "beginner" | "intermediate" | "advanced" | "expert"
+  "whatWhy": string,             // 2-4 clear sentences explaining what it is and why it matters
+  "concepts": [                  // 5-10 key concepts with clear definitions
+    { 
+      "term": string,            // concise concept name
+      "definition": string       // 1-2 sentence explanation
+    }
   ],
-  "steps": [string],             // 5–8 numbered learning steps (imperative voice)
-  "tasks": [string],             // 3–5 small practice tasks
-  "pitfalls": [string]           // 4–8 common mistakes
+  "steps": [string],             // 5-8 actionable learning steps in imperative voice
+  "tasks": [string],             // 3-5 practical, small practice tasks
+  "pitfalls": [string]           // 4-8 common mistakes with brief explanations
 }
 
-Constraints:
-- Output must be valid JSON. No markdown, no backticks, no extra text.
-- Keep items concise but clear.
+CRITICAL CONSTRAINTS:
+1. Output MUST be valid JSON only - no markdown, no backticks, no additional text
+2. All fields must be present, even if empty arrays for optional sections
+3. Content should be concise but comprehensive for learning
+4. Difficulty must exactly match the input difficulty level
+5. Use clear, instructional language suitable for learners
 
-Input:
+Input Parameters:
 - Skill: "${skillName}"
 - Difficulty: "${difficulty}"
 `.trim();

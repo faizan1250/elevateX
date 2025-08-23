@@ -15,5 +15,6 @@ router.post("/progress",requireAuth, skillController.updateProgress);
 
 // AI content
 router.get("/:skillId/content",requireAuth, skillController.generateSkillContent);
+router.get("/:skillId/content/regen",requireAuth, skillController.regenerateSkillContent);
 
 module.exports = router;

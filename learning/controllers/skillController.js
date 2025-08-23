@@ -330,3 +330,72 @@ exports.generateSkillContent = async (req, res) => {
     return res.status(500).json({ message: "Failed to generate AI content" });
   }
 };
+
+// DELETE + REGENERATE controller
+// Assumes you have: Skill, generateSkillMaterial(genAI, name, difficulty), AIGenerationError
+
+exports.regenerateSkillContent = async (req, res) => {
+  try {
+    const { skillId } = req.params;
+    const skill = await Skill.findById(skillId);
+    if (!skill) return res.status(404).json({ message: "Skill not found" });
+
+    // 1) Generate new content first, so if generation fails you don't lose the old one.
+    const { normalized, rawText } = await generateSkillMaterial(
+      req.app.get("genAI"),
+      skill.name,
+      skill.difficulty || "intermediate"
+    );
+
+    // 2) Replace existing content atomically in one save.
+    // If you literally want the fields removed before setting, uncomment the $unset version below.
+    skill.generatedContent = {
+      ...(skill.generatedContent || {}),
+      studyMaterialJson: normalized,
+      studyMaterialText: rawText,
+    };
+    await skill.save();
+
+    // If you truly want to "delete then set" at the DB level, use this instead:
+    // await Skill.updateOne(
+    //   { _id: skill._id },
+    //   {
+    //     $unset: {
+    //       "generatedContent.studyMaterialJson": "",
+    //       "generatedContent.studyMaterialText": ""
+    //     }
+    //   }
+    // );
+    // await Skill.updateOne(
+    //   { _id: skill._id },
+    //   {
+    //     $set: {
+    //       "generatedContent.studyMaterialJson": normalized,
+    //       "generatedContent.studyMaterialText": rawText
+    //     }
+    //   }
+    // );
+
+    return res.json({
+      regenerated: true,
+      cached: false,
+      skill: {
+        id: skill.id,
+        name: skill.name,
+        difficulty: skill.difficulty || "intermediate",
+      },
+      material: { json: normalized, text: rawText },
+    });
+  } catch (err) {
+    if (err instanceof AIGenerationError) {
+      // generation failed; old content is still intact because we generated before save
+      return res.status(err.status || 502).json({
+        message: err.message,
+        code: err.code,
+        ...(err.meta ? { meta: err.meta } : {}),
+      });
+    }
+    console.error("regenerateSkillContent error:", err);
+    return res.status(500).json({ message: "Failed to regenerate AI content" });
+  }
+};

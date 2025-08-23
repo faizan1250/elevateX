@@ -18,6 +18,13 @@ const setupSwagger = require('./swagger');
 const app = express();
 const server = http.createServer(app);
 
+const { GoogleGenAI } = require("@google/genai");
+if (!process.env.GEMINI_API_KEY) {
+  console.error("GEMINI_API_KEY missing. SSE will throw 'AI not initialized'.");
+}
+const genAI = process.env.GEMINI_API_KEY ? new GoogleGenAI(process.env.GEMINI_API_KEY) : null;
+app.set("genAI", genAI);
+
 // ============================
 // MIDDLEWARE
 // ============================
