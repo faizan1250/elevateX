@@ -1,37 +1,5 @@
-// const OpenAI = require("openai");
-// require('dotenv');
-// if (!process.env.DEEPSEEK_API_KEY) {
-//   throw new Error("Missing DEEPSEEK_API_KEY in environment.");
-// }
-
-// const openai = new OpenAI({
-//   apiKey: process.env.DEEPSEEK_API_KEY,
-//   baseURL: "https://api.deepseek.com",
-// });
-
-// const generateCareerPlan = async (careerInput) => {
-//   const messages = [
-//     {
-//       role: "system",
-//       content: "You are a career assistant who generates detailed learning roadmaps.",
-//     },
-//     {
-//       role: "user",
-//       content: `Create a learning plan for: ${JSON.stringify(careerInput)}.`,
-//     },
-//   ];
-
-//   const completion = await openai.chat.completions.create({
-//     model: "deepseek-chat",
-//     messages,
-//   });
-
-//   return completion.choices[0].message.content;
-// };
-
-// module.exports = { generateCareerPlan };
-const OpenAI = require("openai");
-const { mockAIResponse } = require("./aiWrapper");
+import OpenAI from "openai";
+import { mockAIResponse } from "./aiWrapper.js";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -69,4 +37,4 @@ async function generateCareerPlanFromAI(userChoice) {
   }
 }
 
-module.exports = { generateCareerPlanFromAI };
+export default { generateCareerPlanFromAI };;

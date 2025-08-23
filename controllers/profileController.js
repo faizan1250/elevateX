@@ -1,6 +1,6 @@
-const User = require('../models/User');
-const cloudinary = require('cloudinary').v2;
-
+import User from "../models/User.js";
+import cloudinar from 'cloudinary';
+const cloudinary = cloudinar.v2;
 // 🖼 Configure Cloudinary (optional, or use S3)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,7 +9,7 @@ cloudinary.config({
 });
 
 // 📌 Get a user's profile
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.params.userId)
       .select('username email profilePicture links friends')
@@ -19,11 +19,11 @@ exports.getProfile = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Error fetching profile' });
   }
-};
+};;
 
 
 // 📌 Update profile details
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   try {
     const { username, links } = req.body;
     const user = await User.findById(req.user.id);
@@ -50,10 +50,10 @@ exports.updateProfile = async (req, res) => {
     console.error('Error updating profile:', err);
     res.status(500).json({ message: 'Error updating profile' });
   }
-};
+};;
 
 // 📌 Upload profile picture
-exports.uploadProfilePicture = async (req, res) => {
+export const uploadProfilePicture = async (req, res) => {
   try {
     console.log("REQ FILE:", req.file);
     const file = req.file;
@@ -72,10 +72,10 @@ exports.uploadProfilePicture = async (req, res) => {
     console.error("Upload error:", err);
     res.status(500).json({ message: err.message || 'Error uploading picture' });
   }
-};
+};;
 
 // 📌 Delete profile picture
-exports.deleteProfilePicture = async (req, res) => {
+export const deleteProfilePicture = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -98,4 +98,4 @@ exports.deleteProfilePicture = async (req, res) => {
     console.error('Error deleting profile picture:', err);
     res.status(500).json({ message: 'Error deleting profile picture' });
   }
-};
+};;

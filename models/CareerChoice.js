@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const CareerChoiceSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -14,4 +14,4 @@ const CareerChoiceSchema = new mongoose.Schema({
   journeyStarted: { type: Boolean, default: false } // 👈 Add this line
 });
 
-module.exports = mongoose.model("CareerChoice", CareerChoiceSchema);
+export default mongoose.model("CareerChoice", CareerChoiceSchema);;

@@ -1,8 +1,6 @@
-// learning/services/bootstrapService.js
-const mongoose = require("mongoose");
-//const CareerPlan = require("../../models/CareerPlan");
-const Module = require("../models/Module");
-const Skill = require("../models/Skill");
+import mongoose from "mongoose";
+import Module from "../models/Module.js";
+import Skill from "../models/Skill.js";
 // const Topic = require("../models/Topic"); // only if you want topic deletions
 
 const clean = (s) => (typeof s === "string" ? s.trim() : "");
@@ -108,7 +106,7 @@ async function pruneUnusedModules(userId, keepTitles) {
   return staleIds.length;
 }
 
-async function bootstrapFromPlanForUser(userId, { mode = "sync" } = {}) {
+export const  bootstrapFromPlanForUser = async(userId, { mode = "sync" } = {}) =>{
   if (!userId) throw new Error("Missing userId for bootstrap");
   const planDoc = await CareerPlan.findOne({ userId }).lean();
   if (!planDoc) throw new Error("No career plan found for user");
@@ -156,4 +154,4 @@ async function bootstrapFromPlanForUser(userId, { mode = "sync" } = {}) {
   return { ok: true, mode, processed: titlesProcessed };
 }
 
-module.exports = { bootstrapFromPlanForUser };
+

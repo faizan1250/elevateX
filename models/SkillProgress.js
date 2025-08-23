@@ -1,5 +1,4 @@
-// elevateX/models/SkillProgress.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 /**
  * Unified SkillProgress model (backward + forward compatible)
@@ -118,5 +117,4 @@ SkillProgressSchema.statics.markCompleted = function ({ userId, skillId, skillNa
 };
 
 // Prevent OverwriteModelError in dev/hot-reload
-module.exports =
-  mongoose.models.SkillProgress || mongoose.model("SkillProgress", SkillProgressSchema);
+export default mongoose.models.SkillProgress || mongoose.model("SkillProgress", SkillProgressSchema);;

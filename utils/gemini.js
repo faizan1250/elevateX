@@ -1,6 +1,6 @@
 
-const { GoogleGenAI } = require("@google/genai");
-const { mockAIResponse } = require("./aiWrapper");
+import { GoogleGenAI } from "@google/genai";
+import { mockAIResponse } from "./aiWrapper.js";
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -48,7 +48,7 @@ function defaultPlan(userChoice) {
   };
 }
 
-async function generateCareerPlan(userChoice) {
+export const  generateCareerPlan = async (userChoice) =>{
   try {
     const prompt = `
 You are an **AI Career Mentor, Industry Expert, and Project Manager**.  
@@ -152,4 +152,4 @@ ${JSON.stringify(userChoice, null, 2)}
   }
 }
 
-module.exports = { generateCareerPlan };
+

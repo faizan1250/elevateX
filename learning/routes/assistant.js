@@ -1,8 +1,8 @@
 // routes/assistant.js
-const r = require("express").Router();
-const express = require("express");
-const requireAuth  = require("../../middleware/auth");
-const ctrl = require("../controllers/assistantController");
+import express from "express";
+const r = express.Router();
+import requireAuth from "../../middleware/auth.js";
+import * as  ctrl from "../controllers/assistantController.js";
 r.use(express.json());
 r.post('/:skillId/debug-stream', (req, res) => {
   console.log('HIT /debug-stream', req.params.skillId, new Date().toISOString());
@@ -54,4 +54,4 @@ r.post("/:skillId/query", requireAuth, ctrl.querySSE);             // SSE stream
 r.post("/:skillId/threads", requireAuth, ctrl.createThread);       // optional explicit create
 r.post("/:skillId/threads/:threadId/rename", requireAuth, ctrl.renameThread); // optional
 
-module.exports = r;
+export default r;;

@@ -1,9 +1,9 @@
-const Friendship = require('../models/Friendship');
-const User = require('../models/User');
-const Notification = require('../models/Notification');
+import Friendship from "../models/Friendship.js";
+import User from "../models/User.js";
+import Notification from "../models/Notification.js";
 
 // 📌 Send friend request
-exports.sendRequest = async (req, res) => {
+export const sendRequest = async (req, res) => {
   try {
     console.log(`📩 Friend request attempt from ${req.user.id} to ${req.params.id}`);
 
@@ -55,10 +55,10 @@ exports.sendRequest = async (req, res) => {
     console.error("❌ Error sending request:", err);
     res.status(500).json({ message: 'Error sending request' });
   }
-};
+};;
 
 // 📌 Accept friend request
-exports.acceptRequest = async (req, res) => {
+export const acceptRequest = async (req, res) => {
   try {
     console.log(`✅ Accept friend request ID: ${req.params.id} by user: ${req.user.id}`);
 
@@ -100,10 +100,10 @@ exports.acceptRequest = async (req, res) => {
     console.error("❌ Error accepting request:", err);
     res.status(500).json({ message: 'Error accepting request' });
   }
-};
+};;
 
 // 📌 Decline friend request
-exports.declineRequest = async (req, res) => {
+export const declineRequest = async (req, res) => {
   try {
     console.log(`⚠️ Declining friend request ID: ${req.params.id} by user: ${req.user.id}`);
 
@@ -128,10 +128,10 @@ exports.declineRequest = async (req, res) => {
     console.error("❌ Error declining request:", err);
     res.status(500).json({ message: 'Error declining request' });
   }
-};
+};;
 
 // 📌 Remove / unfriend
-exports.removeFriend = async (req, res) => {
+export const removeFriend = async (req, res) => {
   try {
     const userId = req.user.id;
     const friendId = req.params.id;
@@ -163,10 +163,10 @@ exports.removeFriend = async (req, res) => {
     console.error("❌ Error removing friend:", err);
     res.status(500).json({ message: "Error removing friend" });
   }
-};
+};;
 
 // 📌 Get all friends
-exports.getFriends = async (req, res) => {
+export const getFriends = async (req, res) => {
   try {
     const userId = req.user.id;
     console.log(`📥 Fetching friends for user: ${userId}`);
@@ -191,10 +191,10 @@ exports.getFriends = async (req, res) => {
     console.error('❌ Error fetching friends:', err);
     res.status(500).json({ message: 'Error fetching friends' });
   }
-};
+};;
 
 // 📌 Get pending requests
-exports.getPendingRequests = async (req, res) => {
+export const getPendingRequests = async (req, res) => {
   try {
     const userId = req.user.id;
     console.log(`📥 Fetching pending requests for user: ${userId}`);
@@ -219,4 +219,4 @@ exports.getPendingRequests = async (req, res) => {
     console.error('❌ Error fetching pending requests:', err);
     res.status(500).json({ message: 'Error fetching pending requests' });
   }
-};
+};;

@@ -1,7 +1,6 @@
-// utils/pdfGenerator.js
-const PDFDocument = require("pdfkit");
-const fs = require("fs");
-const path = require("path");
+import PDFDocument from "pdfkit";
+import fs from "fs";
+import path from "path";
 
 /**
  * Generate and save PDF certificate
@@ -11,7 +10,7 @@ const path = require("path");
  * @param {Number} options.score
  * @returns {String} file path or URL
  */
-exports.generateCertificatePDF = ({ userId, userName = "Learner", score }) => {
+export const generateCertificatePDF = ({ userId, userName = "Learner", score }) => {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -68,4 +67,4 @@ exports.generateCertificatePDF = ({ userId, userName = "Learner", score }) => {
       reject(err);
     }
   });
-};
+};;

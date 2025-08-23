@@ -8,7 +8,7 @@ function toGeminiContents(messages = []) {
     }));
 }
 
-exports.streamFromLLM = async function streamFromLLM(genAI, messages) {
+export const streamFromLLM = async function streamFromLLM(genAI, messages) {
   if (!genAI) throw new Error("AI not initialized");
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
@@ -48,4 +48,4 @@ exports.streamFromLLM = async function streamFromLLM(genAI, messages) {
     const size = 160;
     for (let i = 0; i < s.length; i += size) yield s.slice(i, i + size);
   })();
-};
+};;

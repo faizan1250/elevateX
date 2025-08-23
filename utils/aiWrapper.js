@@ -1,6 +1,6 @@
 // Mock AI wrapper — plug in OpenAI later
 
-const mockAIResponse = (careerInput) => {
+export const mockAIResponse = (careerInput) => {
   return {
     skills: ["HTML", "CSS", "JavaScript", "React", "Node.js"],
     roadmap: [
@@ -20,4 +20,4 @@ const mockAIResponse = (careerInput) => {
   };
 };
 
-module.exports = { mockAIResponse };
+

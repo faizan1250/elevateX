@@ -1,13 +1,11 @@
 
-// learning/controllers/bootstrapController.js
-const CareerPlan = require('../../models/CareerPlan'); // ⬅️ adjust path if different
-const Module = require('../models/Module');
-const Skill = require('../models/Skill');
-const Topic = require('../models/Topic');
-const mongoose = require("mongoose");
-const { bootstrapFromPlanForUser } = require("../services/bootstrapService");
-
-const { generateTopicsForSkill: aiGenerateTopicsForSkill,AIGenerationError } = require('../services/aiService');
+import CareerPlan from "../../models/CareerPlan.js";
+import Module from "../models/Module.js";
+import Skill from "../models/Skill.js";
+import Topic from "../models/Topic.js";
+import mongoose from "mongoose";
+import { bootstrapFromPlanForUser } from "../services/bootstrapService.js";
+import { generateTopicsForSkill as aiGenerateTopicsForSkill, AIGenerationError } from "../services/aiService.js";
 
 const clean = (s) => (typeof s === 'string' ? s.trim() : '');
 const uniq = (arr) => Array.from(new Set(arr.filter(Boolean)));
@@ -191,7 +189,7 @@ async function bootstrapSkillsFromPlan(req, res) {
 }
 
 // generate topics for a single skill (unchanged)
-async function generateTopicsForSkillController(req, res) {
+async function generateTopicsForSkill(req, res) {
   const userId = req.user?.id || req.body.userId || req.query.userId;
   const { skillId } = req.params;
   const difficulty = req.body?.difficulty || 'intermediate';
@@ -304,7 +302,7 @@ async function generateTopicsForSkillController(req, res) {
 
 
 // bulk: generate topics for all skills (unchanged)
-async function generateTopicsForAllSkillsController(req, res) {
+async function generateTopicsForAllSkills(req, res) {
   const difficulty = req.body?.difficulty || 'intermediate';
   const { moduleId: filterModuleId } = req.body;
 
@@ -417,9 +415,8 @@ async function generateTopicsForAllSkillsController(req, res) {
 }
 
 
-
-module.exports = {
+export {
   bootstrapSkillsFromPlan,
-  generateTopicsForSkill: generateTopicsForSkillController,
-  generateTopicsForAllSkills: generateTopicsForAllSkillsController,
+  generateTopicsForSkill,
+  generateTopicsForAllSkills,
 };

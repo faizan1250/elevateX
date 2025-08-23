@@ -1,11 +1,10 @@
-const express = require('express');
+import express from "express";
 const router = express.Router();
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
-
-const authController = require('../controllers/authController');
-const User = require('../models/User');
-const auth = require('../middleware/auth');
+import passport from "passport";
+import jwt from "jsonwebtoken";
+import * as authController from "../controllers/authController.js";
+import User from "../models/User.js";
+import auth from "../middleware/auth.js";
 router.post('/register', authController.register);
 router.get('/verify-email', authController.verifyEmail);
 router.post('/login', authController.login);
@@ -82,4 +81,4 @@ router.get('/github/callback', (req, res, next) => {
 
 
 
-module.exports = router;
+export default router;;

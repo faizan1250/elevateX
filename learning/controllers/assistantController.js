@@ -1,12 +1,11 @@
-// controllers/assistantController.js
-const AssistantThread = require("../models/AssistantThread");
-const Skill = require("../models/Skill");
-const { countTokens } = require("../library/llmtoken");
-const { streamFromLLM } = require("../library/llmstream");
+import AssistantThread from "../models/AssistantThread.js";
+import Skill from "../models/Skill.js";
+import { countTokens } from "../library/llmtoken.js";
+import { streamFromLLM } from "../library/llmstream.js";
 
 /* ---------- threads ---------- */
 
-exports.listThreads = async (req, res) => {
+export const listThreads = async (req, res) => {
   try {
     const { skillId } = req.params;
 
@@ -27,9 +26,9 @@ exports.listThreads = async (req, res) => {
     console.error("listThreads error:", err);
     res.status(500).json({ message: "Failed to list threads" });
   }
-};
+};;
 
-exports.getMessages = async (req, res) => {
+export const getMessages = async (req, res) => {
   try {
     const { threadId } = req.params;
     const thread = await AssistantThread.findById(threadId)
@@ -41,9 +40,9 @@ exports.getMessages = async (req, res) => {
     console.error("getMessages error:", err);
     res.status(500).json({ message: "Failed to get messages" });
   }
-};
+};;
 
-exports.createThread = async (req, res) => {
+export const createThread = async (req, res) => {
   try {
     const { skillId } = req.params;
     const { firstMessage } = req.body || {};
@@ -60,9 +59,9 @@ exports.createThread = async (req, res) => {
     console.error("createThread error:", err);
     res.status(500).json({ message: "Failed to create thread" });
   }
-};
+};;
 
-exports.renameThread = async (req, res) => {
+export const renameThread = async (req, res) => {
   try {
     const { threadId } = req.params;
     const { title } = req.body || {};
@@ -72,10 +71,10 @@ exports.renameThread = async (req, res) => {
     console.error("renameThread error:", err);
     res.status(500).json({ message: "Failed to rename thread" });
   }
-};
+};;
 
 /* ---------- SSE chat ---------- */
-exports.querySSE = async (req, res) => {
+export const querySSE = async (req, res) => {
   // 1) SSE headers first, or everything buffers
   res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
   res.setHeader("Cache-Control", "no-cache");
@@ -217,4 +216,4 @@ exports.querySSE = async (req, res) => {
     clearInterval(heartbeat);
     res.end();
   }
-};
+};;

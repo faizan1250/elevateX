@@ -1,8 +1,8 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const skillController = require("../controllers/skillController");
-const requireAuth = require('../../middleware/auth');
+import * as  skillController from "../controllers/skillController.js";
+import requireAuth from "../../middleware/auth.js";
 // CRUD
 router.post("/",requireAuth, skillController.createSkill);
 router.get("/",requireAuth, skillController.getSkills);
@@ -17,4 +17,4 @@ router.post("/progress",requireAuth, skillController.updateProgress);
 router.get("/:skillId/content",requireAuth, skillController.generateSkillContent);
 router.get("/:skillId/content/regen",requireAuth, skillController.regenerateSkillContent);
 
-module.exports = router;
+export default router;;

@@ -1,5 +1,4 @@
-// models/Module.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 const moduleSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
   title: { type: String, required: true, trim: true },
@@ -12,4 +11,4 @@ const moduleSchema = new mongoose.Schema({
 // unique per user (case-insensitive)
 moduleSchema.index({ userId: 1, title: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
 
-module.exports = mongoose.model("Module", moduleSchema);
+export default mongoose.model("Module", moduleSchema);;

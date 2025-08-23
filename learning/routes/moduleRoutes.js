@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const moduleController = require("../controllers/moduleController");
-const requireAuth = require('../../middleware/auth');
+import * as  moduleController from "../controllers/moduleController.js";
+import requireAuth from "../../middleware/auth.js";
 // CRUD
 router.post("/",requireAuth, moduleController.createModule);
 router.get("/", requireAuth, moduleController.getModules);
@@ -12,4 +12,4 @@ router.delete("/:id",requireAuth, moduleController.deleteModule);
 // AI-generated path
 router.get("/:moduleId/generate-path",requireAuth, moduleController.generateModulePath);
 
-module.exports = router;
+export default router;;

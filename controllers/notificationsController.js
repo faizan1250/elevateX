@@ -1,7 +1,7 @@
-const Notification = require('../models/Notification');
+import Notification from "../models/Notification.js";
 
 // 📌 Get notifications
-exports.getNotifications = async (req, res) => {
+export const getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ user: req.user.id })
       .populate('fromUser', 'username profilePicture') // ✅
@@ -12,11 +12,11 @@ exports.getNotifications = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Error fetching notifications' });
   }
-};
+};;
 
 
 // 📌 Mark as read
-exports.markAsRead = async (req, res) => {
+export const markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
     if (!notification || notification.user.toString() !== req.user.id) {
@@ -29,10 +29,10 @@ exports.markAsRead = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Error updating notification' });
   }
-};
+};;
 
 // 📌 Archive
-exports.archiveNotification = async (req, res) => {
+export const archiveNotification = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
     if (!notification || notification.user.toString() !== req.user.id) {
@@ -45,10 +45,10 @@ exports.archiveNotification = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Error archiving notification' });
   }
-};
+};;
 
 // 📌 Create notification + emit in real-time
-exports.createNotification = async (req, res) => {
+export const createNotification = async (req, res) => {
   try {
     const { userId, type, data } = req.body;
 
@@ -74,9 +74,9 @@ exports.createNotification = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Error creating notification' });
   }
-};
+};;
 // 📌 Delete Notification
-exports.deleteNotification = async (req, res) => {
+export const deleteNotification = async (req, res) => {
   try {
     const notification = await Notification.findById(req.params.id);
     if (!notification || notification.user.toString() !== req.user.id) {
@@ -89,5 +89,5 @@ exports.deleteNotification = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Error deleting notification' });
   }
-};
+};;
 

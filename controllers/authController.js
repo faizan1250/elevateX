@@ -1,19 +1,15 @@
-// controllers/authController.js
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const sendEmail = require('../utils/sendEmail');
-const {
-  getVerificationEmailTemplate,
-  getResetPasswordEmailTemplate,
-} = require('../utils/emailTemplate');
+import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import sendEmail from "../utils/sendEmail.js";
+import { getVerificationEmailTemplate, getResetPasswordEmailTemplate } from "../utils/emailTemplate.js";
 const createToken = (user) => {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
     expiresIn: '1d',
   });
 };
 
-exports.register = async (req, res) => {
+export const register = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
@@ -49,9 +45,9 @@ await sendEmail({
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
-};
+};;
 
-exports.verifyEmail = async (req, res) => {
+export const verifyEmail = async (req, res) => {
   const { token } = req.query;
   try {
     if (!token) return res.status(400).json({ message: 'Missing token' });
@@ -70,9 +66,9 @@ exports.verifyEmail = async (req, res) => {
     console.error(err);
     res.status(400).json({ message: 'Invalid or expired token' });
   }
-};
+};;
 
-exports.login = async (req, res) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -107,14 +103,14 @@ exports.login = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
-};
+};;
 
 
-exports.logout = (req, res) => {
+export const logout = (req, res) => {
   res.clearCookie('token').json({ message: 'Logged out' });
-};
+};;
 
-exports.requestPasswordReset = async (req, res) => {
+export const requestPasswordReset = async (req, res) => {
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
@@ -133,9 +129,9 @@ exports.requestPasswordReset = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
-};
+};;
 
-exports.resetPassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   const { token, password } = req.body;
  
   try {
@@ -154,4 +150,4 @@ exports.resetPassword = async (req, res) => {
     console.error("Reset password error:", err.name, err.message);
     res.status(400).json({ message: 'Invalid or expired token' });
   }
-};
+};;

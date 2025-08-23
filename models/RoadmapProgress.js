@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const RoadmapProgressSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -11,4 +11,4 @@ const RoadmapProgressSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model("RoadmapProgress", RoadmapProgressSchema);
+export default mongoose.model("RoadmapProgress", RoadmapProgressSchema);;

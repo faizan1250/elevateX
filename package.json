@@ -1,22 +1,28 @@
 {
   "name": "elevatex",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "",
+  "type": "module",
+  "private": false,
+  "engines": {
+    "node": ">=20.10"
+  },
   "scripts": {
-    "test": "jest"
+    "start": "node server.js",
+    "dev": "nodemon --watch . --ext js,json --exec \"node server.js\"",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/faizan1250/elevateX.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "bugs": {
     "url": "https://github.com/faizan1250/elevateX/issues"
   },
   "homepage": "https://github.com/faizan1250/elevateX#readme",
-  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "@google/genai": "^1.11.0",
     "@google/generative-ai": "^0.24.1",
@@ -24,7 +30,7 @@
     "cloudinary": "^2.7.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dotenv": "^17.0.1",
+    "dotenv": "^16.4.5",
     "express": "^5.1.0",
     "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
@@ -42,7 +48,14 @@
   "devDependencies": {
     "cross-env": "^10.0.0",
     "jest": "^30.0.3",
+    "jscodeshift": "^17.3.0",
     "nodemon": "^3.1.10",
     "supertest": "^7.1.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageProvider": "v8",
+    "extensionsToTreatAsEsm": [".js"],
+    "testMatch": ["**/test/**/*.test.js"]
   }
 }

@@ -1,9 +1,9 @@
-const dotenv = require("dotenv");
-const path = require("path");
+import dotenv from "dotenv";
+import path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../env.test") });
 
-const jwt = require("jsonwebtoken");
-const mongoose = require("mongoose");
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 // Dummy user (not saved in DB, just used for token and _id)
 const mockUser = {
@@ -34,7 +34,7 @@ function generateTestToken() {
   };
 }
 
-module.exports = {
+export default {
   generateTestToken,
   mockUser,
-};
+};;

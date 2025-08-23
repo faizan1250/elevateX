@@ -1,11 +1,11 @@
-const express = require('express');
+import express from "express";
 const router = express.Router();
-const notificationsController = require('../controllers/notificationsController');
-const auth = require('../middleware/auth');
+import * as notificationsController from "../controllers/notificationsController.js";
+import auth from "../middleware/auth.js";
 
 router.get('/', auth, notificationsController.getNotifications);
 router.post('/read/:id', auth, notificationsController.markAsRead);
 router.post('/archive/:id', auth, notificationsController.archiveNotification);
-router.delete('/:id', auth, notificationsController.deleteNotification); 
+router.delete('/:id', auth, notificationsController.deleteNotification);
 
-module.exports = router;
+export default router;;

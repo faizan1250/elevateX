@@ -1,9 +1,11 @@
-// config/passport.js
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const GitHubStrategy = require('passport-github2').Strategy;
-const User = require('../models/User');
-const crypto = require('crypto');
+import passport from "passport";
+import GoogleOAuth from "passport-google-oauth20";
+import GitHubOAuth from "passport-github2";
+
+const GoogleStrategy = GoogleOAuth.Strategy;
+const GitHubStrategy = GitHubOAuth.Strategy
+import User from "../models/User.js";
+import crypto from "crypto";
 
 passport.serializeUser((user, done) => {
   done(null, user.id);

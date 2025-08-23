@@ -1,13 +1,13 @@
-const Skill = require('../models/Skill');
-const SkillProgress = require('../../models/SkillProgress');
-const Topic = require('../models/Topic')
-const TopicProgress = require("../models/TopicProgress");
-const { recomputeSkillProgress } = require("../services/learningUtils");
-const aiService = require('../services/aiService');
-const { generateSkillMaterial, AIGenerationError } = require('../services/aiService');
-const mongoose = require("mongoose");
+import Skill from "../models/Skill.js";
+import SkillProgress from "../../models/SkillProgress.js";
+import Topic from "../models/Topic.js";
+import TopicProgress from "../models/TopicProgress.js";
+import { recomputeSkillProgress } from "../services/learningUtils.js";
+import * as  aiService from "../services/aiService.js";
+import { generateSkillMaterial, AIGenerationError } from "../services/aiService.js";
+import mongoose from "mongoose";
 // Create a new skill
-exports.createSkill = async (req, res) => {
+export const createSkill = async (req, res) => {
   try {
     const skill = new Skill(req.body);
     await skill.save();
@@ -15,7 +15,7 @@ exports.createSkill = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};
+};;
 
 // Get all skills
 // exports.getSkills = async (req, res) => {
@@ -68,7 +68,7 @@ exports.createSkill = async (req, res) => {
 //   }
 // };
 // Get only the current user's skills (plus progress merge)
-exports.getSkills = async (req, res) => {
+export const getSkills = async (req, res) => {
   try {
     const { moduleId, q, difficulty, sort = "-updatedAt" } = req.query;
 
@@ -130,14 +130,14 @@ exports.getSkills = async (req, res) => {
       .status(500)
       .json({ message: err.message || "Failed to fetch skills" });
   }
-};
+};;
 
 
 
 // controllers/skillController.js
 
 
-exports.getSkill = async (req, res) => {
+export const getSkill = async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -178,10 +178,10 @@ exports.getSkill = async (req, res) => {
     console.error("getSkill error:", err);
     return res.status(500).json({ message: err.message || "Failed to fetch skill" });
   }
-};
+};;
 
 // Update skill
-exports.updateSkill = async (req, res) => {
+export const updateSkill = async (req, res) => {
   try {
     const skill = await Skill.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
@@ -189,10 +189,10 @@ exports.updateSkill = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};
+};;
 
 // Delete skill
-exports.deleteSkill = async (req, res) => {
+export const deleteSkill = async (req, res) => {
   try {
     const skill = await Skill.findByIdAndDelete(req.params.id);
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
@@ -200,13 +200,13 @@ exports.deleteSkill = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};
+};;
 
 // controllers/skillController.js (or wherever your progress lives)
 
 
 
-exports.updateProgress = async (req, res) => {
+export const updateProgress = async (req, res) => {
   try {
     const { skillId, progress } = req.body;
     const userId = req.user?.id;
@@ -274,14 +274,14 @@ exports.updateProgress = async (req, res) => {
     console.error("updateSkillProgress error:", err);
     res.status(500).json({ message: err.message });
   }
-};
+};;
 
 
 
 
 
 // Generate AI content for skill
-exports.generateSkillContent = async (req, res) => {
+export const generateSkillContent = async (req, res) => {
   try {
     const { skillId } = req.params;
     const skill = await Skill.findById(skillId);
@@ -329,12 +329,12 @@ exports.generateSkillContent = async (req, res) => {
     console.error("generateSkillContent error:", err);
     return res.status(500).json({ message: "Failed to generate AI content" });
   }
-};
+};;
 
 // DELETE + REGENERATE controller
 // Assumes you have: Skill, generateSkillMaterial(genAI, name, difficulty), AIGenerationError
 
-exports.regenerateSkillContent = async (req, res) => {
+export const regenerateSkillContent = async (req, res) => {
   try {
     const { skillId } = req.params;
     const skill = await Skill.findById(skillId);
@@ -398,4 +398,4 @@ exports.regenerateSkillContent = async (req, res) => {
     console.error("regenerateSkillContent error:", err);
     return res.status(500).json({ message: "Failed to regenerate AI content" });
   }
-};
+};;

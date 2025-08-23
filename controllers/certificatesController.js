@@ -1,9 +1,9 @@
-const Certificate = require("../models/Certificate");
-const CareerPlan = require("../models/CareerPlan");
-const { generateQuestionsFromSkills, evaluateAnswers } = require("../utils/certHelper");
-const { generateCertificatePDF } = require("../utils/pdfGenerator");
+import Certificate from "../models/Certificate.js";
+import CareerPlan from "../models/CareerPlan.js";
+import { generateQuestionsFromSkills, evaluateAnswers } from "../utils/certHelper.js";
+import { generateCertificatePDF } from "../utils/pdfGenerator.js";
 // controllers/certificatesController.js
-exports.getUserCertificates = async (req, res) => {
+export const getUserCertificates = async (req, res) => {
   try {
     const userId = req.user.id;
     const certificates = await Certificate.find({ userId });
@@ -12,8 +12,8 @@ exports.getUserCertificates = async (req, res) => {
     console.error("❌ Error fetching certificates:", err);
     res.status(500).json({ message: "Failed to fetch certificates" });
   }
-};
-exports.generateCertificateTest = async (req, res) => {
+};;
+export const generateCertificateTest = async (req, res) => {
   try {
     console.log("route hit");
 
@@ -35,9 +35,9 @@ exports.generateCertificateTest = async (req, res) => {
     console.error("❌ Error generating test:", err);
     res.status(500).json({ message: "Failed to generate test" });
   }
-};
+};;
 
-exports.submitCertificateTest = async (req, res) => {
+export const submitCertificateTest = async (req, res) => {
   try {
     const userId = req.user.id;
     const { answers, questions } = req.body;
@@ -67,4 +67,4 @@ exports.submitCertificateTest = async (req, res) => {
     console.error("❌ Error submitting test:", err);
     res.status(500).json({ message: "Error submitting certificate test" });
   }
-};
+};;

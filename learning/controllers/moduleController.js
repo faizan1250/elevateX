@@ -1,10 +1,9 @@
-// controllers/moduleController.js
-const mongoose = require('mongoose');
-const Module = require('../models/Module');
-const Skill  = require('../models/Skill');
-const aiService = require('../services/aiService');
+import mongoose from "mongoose";
+import Module from "../models/Module.js";
+import Skill from "../models/Skill.js";
+import * as aiService from "../services/aiService.js";
 
-exports.createModule = async (req, res) => {
+export const createModule = async (req, res) => {
   try {
     const userId = req.user?.id || req.body.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -16,9 +15,9 @@ exports.createModule = async (req, res) => {
     
     res.status(400).json({ message: err.message });
   }
-};
+};;
 
-exports.getModules = async (req, res) => {
+export const getModules = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -49,9 +48,9 @@ exports.getModules = async (req, res) => {
     
     res.status(500).json({ message: err.message });
   }
-};
+};;
 
-exports.getModule = async (req, res) => {
+export const getModule = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -62,9 +61,9 @@ exports.getModule = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};
+};;
 
-exports.updateModule = async (req, res) => {
+export const updateModule = async (req, res) => {
   try {
     const userId = req.user?.id || req.body.userId;
     const module = await Module.findOneAndUpdate({ _id: req.params.id, userId }, req.body, { new: true });
@@ -73,9 +72,9 @@ exports.updateModule = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};
+};;
 
-exports.deleteModule = async (req, res) => {
+export const deleteModule = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
     const mod = await Module.findOneAndDelete({ _id: req.params.id, userId });
@@ -86,10 +85,10 @@ exports.deleteModule = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};
+};;
 
 // AI generated learning path for module
-exports.generateModulePath = async (req, res) => {
+export const generateModulePath = async (req, res) => {
   try {
     const userId = req.user?.id || req.query.userId;
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
@@ -103,4 +102,4 @@ exports.generateModulePath = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};
+};;

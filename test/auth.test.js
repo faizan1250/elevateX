@@ -1,9 +1,9 @@
 require('dotenv').config();
-const request = require('supertest');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const app = require('../app');
-const User = require('../models/User');
+import request from "supertest";
+import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import app from "../app.js";
+import User from "../models/User.js";
 
 // 🧪 Mock sendEmail to avoid actual sending
 jest.mock('../utils/sendEmail', () => jest.fn().mockResolvedValue(true));

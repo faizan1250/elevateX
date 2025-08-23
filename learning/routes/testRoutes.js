@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const testController = require("../controllers/testController");
+import * as testController from "../controllers/testController.js";
 
 // CRUD
 router.post("/", testController.createTest);
@@ -12,4 +12,4 @@ router.delete("/:id", testController.deleteTest);
 // AI-generated questions
 router.get("/:testId/generate-questions", testController.generateTestQuestions);
 
-module.exports = router;
+export default router;;

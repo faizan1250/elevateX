@@ -1,14 +1,18 @@
-const express = require("express");
+import express from "express";
+import skillRoutes from "./skillRoutes.js";
+import moduleRoutes from "./moduleRoutes.js";
+import topicRoutes from "./topicRoutes.js";
+import testRoutes from "./testRoutes.js";
+import assistantRoutes from "./assistant.js";
+import bootstrapRoutes from "./bootstrapRoutes.js";
+
 const router = express.Router();
-//const requireAuth = require('../../middleware/auth');
 
-router.use("/skills",  require("./skillRoutes"));
-router.use("/modules", require("./moduleRoutes"));
-router.use("/topics", require("./topicRoutes"));
-router.use("/tests", require("./testRoutes"));
-router.use("/assistant", require("./assistant"));
+router.use("/skills", skillRoutes);
+router.use("/modules", moduleRoutes);
+router.use("/topics", topicRoutes);
+router.use("/tests", testRoutes);
+router.use("/assistant", assistantRoutes);
+router.use("/bootstrap", bootstrapRoutes);
 
-// NEW bootstrap routes
-router.use("/bootstrap", require("./bootstrapRoutes"));
-
-module.exports = router;
+export default router;

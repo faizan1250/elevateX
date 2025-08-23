@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const ProjectSubmissionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
@@ -7,4 +7,4 @@ const ProjectSubmissionSchema = new mongoose.Schema({
   submittedAt: { type: Date, default: Date.now },
 });
 
-module.exports = mongoose.model("ProjectSubmission", ProjectSubmissionSchema);
+export default mongoose.model("ProjectSubmission", ProjectSubmissionSchema);;

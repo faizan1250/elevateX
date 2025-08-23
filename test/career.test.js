@@ -1,15 +1,14 @@
 jest.setTimeout(60000); // 20 seconds timeout instead of 5s
 require("dotenv").config({ path: "env.test" });
 
-const request = require("supertest");
-const mongoose = require("mongoose");
-const app = require("../app");
-const { generateTestToken } = require("./testUtils");
-
-const CareerChoice = require("../models/CareerChoice");
-const CareerPlan = require("../models/CareerPlan");
-const SkillProgress = require("../models/SkillProgress");
-const ProjectSubmission = require("../models/ProjectSubmission");
+import request from "supertest";
+import mongoose from "mongoose";
+import app from "../app.js";
+import { generateTestToken } from "./testUtils.js";
+import CareerChoice from "../models/CareerChoice.js";
+import CareerPlan from "../models/CareerPlan.js";
+import SkillProgress from "../models/SkillProgress.js";
+import ProjectSubmission from "../models/ProjectSubmission.js";
 
 const { token, user } = generateTestToken();
 

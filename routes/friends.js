@@ -1,9 +1,9 @@
-const express = require('express');
+import express from "express";
 const router = express.Router();
-const friendsController = require('../controllers/friendsController');
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Friendship = require("../models/Friendship");
+import * as friendsController from "../controllers/friendsController.js";
+import auth from "../middleware/auth.js";
+import User from "../models/User.js";
+import Friendship from "../models/Friendship.js";
 router.get("/search", auth, async (req, res) => {
   try {
     const query = req.query.q?.trim();
@@ -66,4 +66,4 @@ router.get('/', auth, friendsController.getFriends);
 router.get('/requests', auth, friendsController.getPendingRequests);
 
 
-module.exports = router;
+export default router;;

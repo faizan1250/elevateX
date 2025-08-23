@@ -1,8 +1,8 @@
 
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const careerController = require("../controllers/careerController");
-const auth = require("../middleware/auth");
+import * as careerController from "../controllers/careerController.js";
+import auth from "../middleware/auth.js";
 
 
 router.post("/chooseCareer", auth, careerController.chooseCareer);
@@ -28,14 +28,14 @@ router.delete("/project/delete", auth, careerController.deleteSubmission);
 router.get("/progress", auth, careerController.getProgress);
 router.delete("/choice", auth, careerController.deleteCareerChoice);  // 🆕 Reset
 router.delete("/reset", auth, careerController.resetUserCareer);
-router.put("/choice", auth, careerController.updateCareerChoice);  
+router.put("/choice", auth, careerController.updateCareerChoice);
 router.post('/roadmap/update', auth, careerController.updateRoadmapStep);
 
 // GET: get user's roadmap progress
-router.get('/roadmap', auth, careerController.getRoadmapProgress); 
+router.get('/roadmap', auth, careerController.getRoadmapProgress);
 // routes/careerRoutes.js
 router.post("/journey/start", auth, careerController.startJourney);
 router.get('/journey/status', auth,careerController.getJourneyStatus);
 router.get('/journey/dashboard', auth, careerController.getJourneyDashboard);
 
-module.exports = router;
+export default router;;

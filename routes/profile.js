@@ -1,10 +1,9 @@
-const express = require('express');
+import express from "express";
 const router = express.Router();
-const profileController = require('../controllers/profileController');
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-
-const multer = require('multer');
+import * as profileController from "../controllers/profileController.js";
+import auth from "../middleware/auth.js";
+import User from "../models/User.js";
+import multer from "multer";
 const upload = multer({ dest: 'uploads/' });
 router.get('/me', auth, async (req, res) => {
   try {
@@ -31,4 +30,4 @@ router.put('/', auth, profileController.updateProfile);
 router.post('/upload-picture', auth, upload.single('profilePicture'), profileController.uploadProfilePicture);
 router.delete('/picture', auth, profileController.deleteProfilePicture);
 
-module.exports = router;
+export default router;;

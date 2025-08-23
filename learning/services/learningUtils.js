@@ -1,8 +1,7 @@
 
-// helpers/learningUtils.js
-const Topic = require("../models/Topic");
-const TopicProgress = require("../models/TopicProgress");
-const SkillProgress = require("../../models/SkillProgress");
+import Topic from "../models/Topic.js";
+import TopicProgress from "../models/TopicProgress.js";
+import SkillProgress from "../../models/SkillProgress.js";
 
 async function recomputeSkillProgress(userId, skillId) {
   // 1. Get all topic IDs for this skill
@@ -49,4 +48,4 @@ async function recomputeSkillProgress(userId, skillId) {
   );
 }
 
-module.exports = { recomputeSkillProgress };
+export  { recomputeSkillProgress };;

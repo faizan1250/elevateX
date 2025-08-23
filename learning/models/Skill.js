@@ -1,5 +1,4 @@
-// models/Skill.js
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const skillSchema = new mongoose.Schema(
   {
@@ -22,4 +21,4 @@ skillSchema.index(
   { unique: true, collation: { locale: "en", strength: 2 } }
 );
 
-module.exports = mongoose.model("Skill", skillSchema);
+export default mongoose.model("Skill", skillSchema);;

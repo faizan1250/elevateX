@@ -1,7 +1,7 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const topicController = require("../controllers/topicController");
-const requireAuth = require("../../middleware/auth");
+import * as topicController from "../controllers/topicController.js";
+import requireAuth from "../../middleware/auth.js";
 
 // CRUD
 router.post("/", requireAuth, topicController.createTopic);
@@ -16,4 +16,4 @@ router.get("/:topicId/generate-summary", requireAuth, topicController.generateTo
 // Progress tracking
 router.post("/progress", requireAuth, topicController.updateProgress);
 
-module.exports = router;
+export default router;;

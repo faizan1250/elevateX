@@ -1,11 +1,13 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
-const {
+
+import {
   bootstrapSkillsFromPlan,
   generateTopicsForSkill,
   generateTopicsForAllSkills,
-} = require("../controllers/bootstrapController");
-const requireAuth = require('../../middleware/auth');
+} from "../controllers/bootstrapController.js";
+
+import requireAuth from "../../middleware/auth.js";
 
 // Convert saved plan -> Modules + Skills
 router.post("/skills", requireAuth, bootstrapSkillsFromPlan);
@@ -16,4 +18,4 @@ router.post("/skills/:skillId/generate-topics", requireAuth, generateTopicsForSk
 // Generate topics for all skills (bulk)
 router.post("/generate-topics-for-user",requireAuth, generateTopicsForAllSkills);
 
-module.exports = router;
+export default router;;

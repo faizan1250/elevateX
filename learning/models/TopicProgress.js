@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const topicProgressSchema = new mongoose.Schema(
   {
@@ -17,4 +17,4 @@ const topicProgressSchema = new mongoose.Schema(
 
 topicProgressSchema.index({ userId: 1, topicId: 1 }, { unique: true });
 
-module.exports = mongoose.model("TopicProgress", topicProgressSchema);
+export default mongoose.model("TopicProgress", topicProgressSchema);;

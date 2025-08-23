@@ -1,4 +1,4 @@
-const getVerificationEmailTemplate = (name, verifyUrl) => `
+export const getVerificationEmailTemplate = (name, verifyUrl) => `
   <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
     <h2 style="color: #0f172a;">Hi ${name},</h2>
     <p style="font-size: 16px; color: #334155;">
@@ -19,7 +19,7 @@ const getVerificationEmailTemplate = (name, verifyUrl) => `
     </p>
   </div>
 `;
-const getResetPasswordEmailTemplate = (name, resetUrl) => `
+export const getResetPasswordEmailTemplate = (name, resetUrl) => `
   <div style="font-family: sans-serif; max-width: 600px; margin: auto;">
     <h2 style="color: #0f172a;">Hello ${name},</h2>
     <p style="font-size: 16px; color: #334155;">
@@ -40,7 +40,3 @@ const getResetPasswordEmailTemplate = (name, resetUrl) => `
     </p>
   </div>
 `;
-module.exports = {
-  getVerificationEmailTemplate,
-  getResetPasswordEmailTemplate,
-};

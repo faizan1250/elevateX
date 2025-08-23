@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
 
@@ -16,4 +16,4 @@ const AssistantThreadSchema = new Schema({
 
 AssistantThreadSchema.index({ skillId: 1, updatedAt: -1 });
 
-module.exports = model("AssistantThread", AssistantThreadSchema);
+export default model("AssistantThread", AssistantThreadSchema);;

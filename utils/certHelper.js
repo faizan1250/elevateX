@@ -1,4 +1,4 @@
-const { GoogleGenAI } = require("@google/genai");
+import { GoogleGenAI } from "@google/genai";
 
 const genAI = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -9,7 +9,7 @@ const genAI = new GoogleGenAI({
  * @param {Array} skills - List of skill strings
  * @returns {Array} - List of questions with options and correct answers
  */
-exports.generateQuestionsFromSkills = async (skills) => {
+export const generateQuestionsFromSkills = async (skills) => {
   try {
     const prompt = `
 You're an AI exam generator. Based on the following technical and soft skills, generate **5 MCQ questions** to test the user's understanding.
@@ -58,7 +58,7 @@ ONLY return the JSON array. No explanations, markdown, or text.
     console.error("❌ Failed to generate questions:", err.message);
     return []; // fallback to empty
   }
-};
+};;
 
 /**
  * Evaluate submitted answers against correct ones
@@ -66,7 +66,7 @@ ONLY return the JSON array. No explanations, markdown, or text.
  * @param {Object} answers - User answers in format { [questionId]: "selected option" }
  * @returns {Object} - score, passed, total, correctCount
  */
-exports.evaluateAnswers = async (questions, answers) => {
+export const evaluateAnswers = async (questions, answers) => {
   try {
     let correctCount = 0;
 
@@ -86,4 +86,4 @@ exports.evaluateAnswers = async (questions, answers) => {
     console.error("❌ Error evaluating answers:", err.message);
     return { score: 0, passed: false, correctCount: 0, total: 0 };
   }
-};
+};;

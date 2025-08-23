@@ -1,6 +1,5 @@
-// sc.js  (CommonJS)
-const mongoose = require("mongoose");
-const dotenv = require("dotenv");
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 dotenv.config();
 
 // 👇 IMPORTANT: .default since the model file uses ESM default export

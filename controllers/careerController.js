@@ -1,15 +1,14 @@
-const CareerChoice = require("../models/CareerChoice");
-const CareerPlan = require("../models/CareerPlan");
-const SkillProgress = require("../models/SkillProgress");
-const ProjectSubmission = require("../models/ProjectSubmission");
-const RoadmapProgress = require("../models/RoadmapProgress");
-const Certificate = require("../models/Certificate");
-const { bootstrapFromPlanForUser } = require("../learning/services/bootstrapService");
-
-const { generateCareerPlan } = require("../utils/gemini"); // renamed for clarity
+import CareerChoice from "../models/CareerChoice.js";
+import CareerPlan from "../models/CareerPlan.js";
+import SkillProgress from "../models/SkillProgress.js";
+import ProjectSubmission from "../models/ProjectSubmission.js";
+import RoadmapProgress from "../models/RoadmapProgress.js";
+import Certificate from "../models/Certificate.js";
+import { bootstrapFromPlanForUser } from "../learning/services/bootstrapService.js";
+import { generateCareerPlan } from "../utils/gemini.js";
 
 // ✅ 1. Save career choice
-exports.chooseCareer = async (req, res) => {
+export const chooseCareer = async (req, res) => {
   try {
     const userId = req.user.id;
     const {
@@ -46,11 +45,11 @@ exports.chooseCareer = async (req, res) => {
     console.error("❌ Error saving career choice:", err);
     res.status(500).json({ message: "Error saving career choice" });
   }
-};
+};;
 
 
 // ✅ 2. Get status
-exports.getCareerStatus = async (req, res) => {
+export const getCareerStatus = async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -70,12 +69,12 @@ exports.getCareerStatus = async (req, res) => {
     console.error('❌ Error fetching career status:', err);
     res.status(500).json({ message: 'Error fetching career status' });
   }
-};
+};;
 
 
 // ✅ 3. Generate career plan
 
-exports.generatePlan = async (req, res) => {
+export const generatePlan = async (req, res) => {
   try {
     const userId = req.user.id;
     const userChoice = await CareerChoice.findOne({ userId });
@@ -103,12 +102,12 @@ exports.generatePlan = async (req, res) => {
     console.error("❌ AI Gen Error:", err);
     res.status(500).json({ message: "Error generating career plan" });
   }
-};
+};;
 
 
 
 // ✅ 4. Get plan
-exports.getPlan = async (req, res) => {
+export const getPlan = async (req, res) => {
   try {
     const userId = req.user.id;
     const plan = await CareerPlan.findOne({ userId });
@@ -120,10 +119,10 @@ exports.getPlan = async (req, res) => {
     console.error("❌ Error fetching plan:", err);
     res.status(500).json({ message: "Error fetching plan" });
   }
-};
+};;
 
 // ✅ 5. Update skill progress
-exports.updateSkill = async (req, res) => {
+export const updateSkill = async (req, res) => {
   try {
     const userId = req.user.id;
     const { skillName, status } = req.body;
@@ -143,9 +142,9 @@ exports.updateSkill = async (req, res) => {
     console.error("❌ Error updating skill:", err);
     res.status(500).json({ message: "Error updating skill status" });
   }
-};
+};;
 // PUT /api/career/choice
-exports.updateCareerChoice = async (req, res) => {
+export const updateCareerChoice = async (req, res) => {
   try {
     const userId = req.user.id;
     const updateData = req.body;
@@ -172,12 +171,12 @@ exports.updateCareerChoice = async (req, res) => {
     console.error("❌ Error updating career choice:", err);
     res.status(500).json({ message: "Error updating career choice" });
   }
-};
+};;
 
 
 
 // ✅ 6. Submit a project
-exports.submitProject = async (req, res) => {
+export const submitProject = async (req, res) => {
   try {
     const userId = req.user.id;
     const { projectTitle, githubLink } = req.body;
@@ -193,10 +192,10 @@ exports.submitProject = async (req, res) => {
     console.error("❌ Error submitting project:", err);
     res.status(500).json({ message: "Error submitting project" });
   }
-};
+};;
 
 // ✅ 7. Delete career plan
-exports.deleteCareerPlan = async (req, res) => {
+export const deleteCareerPlan = async (req, res) => {
   try {
     const userId = req.user.id;
     const deleted = await CareerPlan.findOneAndDelete({ userId });
@@ -206,23 +205,15 @@ exports.deleteCareerPlan = async (req, res) => {
     console.error("❌ Error deleting plan:", err);
     res.status(500).json({ message: "Error deleting career plan" });
   }
-};
+};;
 
 
 
 
 
-// controllers/career.js
-const mongoose = require("mongoose");
-
-// Add the extras you actually have:
-//const LearningJourney = require("../models/LearningJourney");
-//const JourneyStatus = require("../models/JourneyStatus");
-//const ProjectProgress = require("../models/ProjectProgress");
-const TopicProgress = require("../learning/models/TopicProgress");
-
-// const cache = require("../lib/cache"); // e.g., Redis, if you’re caching
-const Skill = require("../learning/models/Skill");
+import mongoose from "mongoose";
+import TopicProgress from "../learning/models/TopicProgress.js";
+import Skill from "../learning/models/Skill.js";
 // exports.resetUserCareer = async (req, res) => {
 //   //i also want thus controller to reset ../learning/models/Skill contents. i have imported that model you just do that too 
 //   //if there isnt any Skill object present then just do the current functionalities but if there are then reset that too
@@ -265,7 +256,7 @@ const Skill = require("../learning/models/Skill");
 // DELETE /api/career/choice
 
 
-exports.resetUserCareer = async (req, res) => {
+export const resetUserCareer = async (req, res) => {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
@@ -354,9 +345,9 @@ exports.resetUserCareer = async (req, res) => {
     console.error("❌ Choice delete error:", err);
     return res.status(500).json({ message: "Failed to delete career choice" });
   }
-};
+};;
 
-exports.deleteCareerChoice = async (req, res) => {
+export const deleteCareerChoice = async (req, res) => {
   try {
     const userId = req.user.id;
     const deleted = await CareerChoice.findOneAndDelete({ userId });
@@ -370,11 +361,11 @@ exports.deleteCareerChoice = async (req, res) => {
     console.error("❌ Error resetting career choice:", err);
     res.status(500).json({ message: "Error resetting career choice" });
   }
-};
+};;
 
 
 // ✅ 8. Delete project
-exports.deleteSubmission = async (req, res) => {
+export const deleteSubmission = async (req, res) => {
   try {
     const userId = req.user.id;
     const { projectTitle } = req.body;
@@ -385,10 +376,10 @@ exports.deleteSubmission = async (req, res) => {
     console.error("❌ Error deleting project:", err);
     res.status(500).json({ message: "Error deleting project" });
   }
-};
+};;
 
 // ✅ 9. Progress tracker
-exports.getProgress = async (req, res) => {
+export const getProgress = async (req, res) => {
   try {
     const userId = req.user.id;
     const skills = await SkillProgress.find({ userId });
@@ -415,8 +406,8 @@ exports.getProgress = async (req, res) => {
     console.error("❌ Error calculating progress:", err);
     res.status(500).json({ message: "Error calculating progress" });
   }
-};
-exports.updateRoadmapStep = async (req, res) => {
+};;
+export const updateRoadmapStep = async (req, res) => {
   try {
     const userId = req.user.id;
     const { stepTitle, status } = req.body;
@@ -436,9 +427,9 @@ exports.updateRoadmapStep = async (req, res) => {
     console.error("❌ Error updating roadmap step:", err);
     res.status(500).json({ message: "Error updating roadmap step" });
   }
-};
+};;
 
-exports.getRoadmapProgress = async (req, res) => {
+export const getRoadmapProgress = async (req, res) => {
   try {
     const userId = req.user.id;
     const progress = await RoadmapProgress.find({ userId });
@@ -447,10 +438,10 @@ exports.getRoadmapProgress = async (req, res) => {
     console.error("❌ Error fetching roadmap progress:", err);
     res.status(500).json({ message: "Error fetching roadmap progress" });
   }
-};
+};;
 
 // In your career controller
-exports.startJourney = async (req, res) => {
+export const startJourney = async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
@@ -485,8 +476,8 @@ exports.startJourney = async (req, res) => {
     console.error("❌ Error starting journey:", err);
     return res.status(500).json({ message: "Failed to start journey" });
   }
-};
-exports.getJourneyStatus = async (req, res) => {
+};;
+export const getJourneyStatus = async (req, res) => {
   try {
     const userId = req.user.id;
     const choice = await CareerChoice.findOne({ userId });
@@ -500,7 +491,7 @@ exports.getJourneyStatus = async (req, res) => {
     console.error('❌ Error fetching journey status:', err);
     return res.status(500).json({ message: 'Error fetching journey status' });
   }
-};
+};;
 // controllers/career.js (or wherever your controller lives)
 
 
@@ -517,7 +508,7 @@ exports.getJourneyStatus = async (req, res) => {
 
 /* ========================= helpers ========================= */
 // controllers/career.js
-exports.getJourneyDashboard = async (req, res) => {
+export const getJourneyDashboard = async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -555,4 +546,4 @@ exports.getJourneyDashboard = async (req, res) => {
     console.error("❌ Error fetching journey dashboard:", err);
     return res.status(500).json({ message: "Error fetching journey dashboard" });
   }
-};
+};;
