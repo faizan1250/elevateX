@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Module from "../models/Module.js";
+import CareerPlan from "../../models/CareerPlan.js"
 import Skill from "../models/Skill.js";
 // const Topic = require("../models/Topic"); // only if you want topic deletions
 
