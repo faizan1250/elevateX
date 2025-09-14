@@ -27,12 +27,17 @@ import setupSwagger from "./swagger.js";
 
 // Optional: Google GenAI wiring
 import { GoogleGenAI } from "@google/genai";
+import marketRouter from "./routes/marketRoute.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
+
+
+// ✅ Serve the uploads folder
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // AI wiring
 if (!process.env.GEMINI_API_KEY) {
@@ -121,9 +126,10 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/friends", friendsRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/learning", learningRoutes);
+app.use("/api/marketplace",marketRouter)
 
 // SWAGGER
 setupSwagger(app);
 
-// Export named, not a default object. It’s ESM. Act like it.
+
 export { app, server };

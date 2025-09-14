@@ -41,6 +41,7 @@
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
+    "pdfkit": "^0.17.1",
     "socket.io": "^4.8.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
@@ -55,7 +56,11 @@
   "jest": {
     "testEnvironment": "node",
     "coverageProvider": "v8",
-    "extensionsToTreatAsEsm": [".js"],
-    "testMatch": ["**/test/**/*.test.js"]
+    "extensionsToTreatAsEsm": [
+      ".js"
+    ],
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ]
   }
 }
