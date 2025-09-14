@@ -3,10 +3,9 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import sendEmail from "../utils/sendEmail.js";
 import { getVerificationEmailTemplate, getResetPasswordEmailTemplate } from "../utils/emailTemplate.js";
-const createToken = (user) => {
-  return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: '1d',
-  });
+
+const createToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
 export const register = async (req, res) => {
