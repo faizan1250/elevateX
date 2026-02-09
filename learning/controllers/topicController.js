@@ -1,6 +1,6 @@
 import Topic from "../models/Topic.js";
 import Skill from "../models/Skill.js";
-import * as  aiService from "../services/aiService.js";
+import * as aiService from "../services/aiService.js";
 import TopicProgress from "../models/TopicProgress.js";
 import mongoose from "mongoose";
 import { recomputeSkillProgress } from "../services/learningUtils.js";
@@ -12,7 +12,7 @@ export const createTopic = async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};;
+};
 
 export const updateProgress = async (req, res) => {
   try {
@@ -29,10 +29,10 @@ export const updateProgress = async (req, res) => {
       typeof status === "string"
         ? status
         : progress >= 100
-        ? "completed"
-        : progress > 0
-        ? "in_progress"
-        : "not_started";
+          ? "completed"
+          : progress > 0
+            ? "in_progress"
+            : "not_started";
 
     // 3) Upsert topic progress
     const updated = await TopicProgress.findOneAndUpdate(
@@ -44,7 +44,7 @@ export const updateProgress = async (req, res) => {
           lastAccessed: new Date(),
         },
       },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
+      { new: true, upsert: true, setDefaultsOnInsert: true },
     );
 
     // 4) Recompute parent skill progress from all topic statuses
@@ -57,7 +57,7 @@ export const updateProgress = async (req, res) => {
     console.error("updateProgress error:", err);
     return res.status(500).json({ message: err.message });
   }
-};;
+};
 
 // 🟢 Get Topics with User Progress
 export const getTopics = async (req, res) => {
@@ -79,7 +79,11 @@ export const getTopics = async (req, res) => {
 
     if (!hasUser || !topics.length) {
       return res.json({
-        items: topics.map((t) => ({ ...t, progress: 0, status: "not_started" })),
+        items: topics.map((t) => ({
+          ...t,
+          progress: 0,
+          status: "not_started",
+        })),
       });
     }
 
@@ -87,7 +91,9 @@ export const getTopics = async (req, res) => {
     const progressDocs = await TopicProgress.find({
       userId,
       topicId: { $in: topicIds },
-    }).select("topicId progress status").lean();
+    })
+      .select("topicId progress status")
+      .lean();
 
     const map = new Map(progressDocs.map((p) => [String(p.topicId), p]));
 
@@ -103,39 +109,46 @@ export const getTopics = async (req, res) => {
     return res.json({ items: merged });
   } catch (err) {
     console.error("getTopics error:", err);
-    return res.status(500).json({ message: err.message || "Failed to fetch topics" });
+    return res
+      .status(500)
+      .json({ message: err.message || "Failed to fetch topics" });
   }
-};;
+};
 
 export const getTopic = async (req, res) => {
   try {
-    const topic = await Topic.findById(req.params.id).populate('moduleId', 'name');
-    if (!topic) return res.status(404).json({ message: 'Topic not found' });
+    const topic = await Topic.findById(req.params.id).populate(
+      "moduleId",
+      "name",
+    );
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
     res.json(topic);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};;
+};
 
 export const updateTopic = async (req, res) => {
   try {
-    const topic = await Topic.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!topic) return res.status(404).json({ message: 'Topic not found' });
+    const topic = await Topic.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+    });
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
     res.json(topic);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
-};;
+};
 
 export const deleteTopic = async (req, res) => {
   try {
     const topic = await Topic.findByIdAndDelete(req.params.id);
-    if (!topic) return res.status(404).json({ message: 'Topic not found' });
-    res.json({ message: 'Topic deleted' });
+    if (!topic) return res.status(404).json({ message: "Topic not found" });
+    res.json({ message: "Topic deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-};;
+};
 
 // AI generate summary/learning material
 // AI generate summary/learning material with caching
@@ -147,11 +160,18 @@ export const generateTopicSummary = async (req, res) => {
 
     // Check cache first
     if (topic.generatedContent?.summary) {
-      return res.json({ topic, summary: topic.generatedContent.summary, cached: true });
+      return res.json({
+        topic,
+        summary: topic.generatedContent.summary,
+        cached: true,
+      });
     }
 
     // Call AI service if no cache
-    const summary = await aiService.generateTopicSummary(topic.name, topic.difficulty);
+    const summary = await aiService.generateTopicSummary(
+      topic.name,
+      topic.difficulty,
+    );
 
     // Save into topic doc
     topic.generatedContent = {
@@ -163,7 +183,8 @@ export const generateTopicSummary = async (req, res) => {
     res.json({ topic, summary, cached: false });
   } catch (err) {
     console.error("generateTopicSummary error:", err);
-    res.status(500).json({ message: err.message || "Failed to generate topic summary" });
+    res
+      .status(500)
+      .json({ message: err.message || "Failed to generate topic summary" });
   }
-};;
-
+};
