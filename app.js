@@ -21,7 +21,8 @@ import profileRoutes from "./routes/profile.js";
 import friendsRoutes from "./routes/friends.js";
 import notificationsRoutes from "./routes/notifications.js";
 import learningRoutes from "./learning/routes/index.js";
-
+import interviewRoutes from "./routes/interviewRoutes.js";
+import interviewSessionRoutes from "./routes/interviewSessionRoutes.js"
 // Swagger
 import setupSwagger from "./swagger.js";
 
@@ -35,7 +36,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const server = http.createServer(app);
 
-
 // ✅ Serve the uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -43,7 +43,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 if (!process.env.GEMINI_API_KEY) {
   console.error("GEMINI_API_KEY missing. SSE will throw 'AI not initialized'.");
 }
-const genAI = process.env.GEMINI_API_KEY ? new GoogleGenAI(process.env.GEMINI_API_KEY) : null;
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI(process.env.GEMINI_API_KEY)
+  : null;
 app.set("genAI", genAI);
 
 // ============================
@@ -53,7 +55,7 @@ app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(cookieParser());
@@ -89,7 +91,7 @@ io.use((socket, next) => {
   }
 });
 
-io.on("connection", socket => {
+io.on("connection", (socket) => {
   const userId = socket.userId;
   socket.join(userId);
 
@@ -126,10 +128,10 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/friends", friendsRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/learning", learningRoutes);
-app.use("/api/marketplace",marketRouter)
-
+app.use("/api/marketplace", marketRouter);
+app.use("/api/interview", interviewRoutes);
+app.use("/api/interview/v1", interviewSessionRoutes);
 // SWAGGER
 setupSwagger(app);
-
 
 export { app, server };
