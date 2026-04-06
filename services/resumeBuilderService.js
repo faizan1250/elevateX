@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { buildCareerSnapshot, getPrimarySkills, getTargetRoles } from "./careerChoiceService.js";
 
 export const RESUME_TEMPLATES = [
   {
@@ -203,15 +204,16 @@ const mapLinks = (links = []) =>
     .filter((item) => item.label || item.url);
 
 export const buildProfileSeed = ({ user, careerChoice, careerPlan }) => {
-  const careerSkills = splitLooseList(careerChoice?.skills);
+  const snapshot = buildCareerSnapshot(careerChoice || {});
+  const careerSkills = getPrimarySkills(careerChoice || {});
   const planSkills = flattenPlanSkills(careerPlan?.plan || careerPlan);
   const targetRoles = uniq([
-    sanitizeString(careerChoice?.careergoal),
-    sanitizeString(careerChoice?.interest),
+    ...getTargetRoles(careerChoice || {}),
+    sanitizeString(snapshot.interest),
   ]).filter(Boolean);
   const fullName = sanitizeString(user?.username || user?.name || "");
-  const interest = sanitizeString(careerChoice?.interest);
-  const careerGoal = sanitizeString(careerChoice?.careergoal);
+  const interest = sanitizeString(snapshot.interest);
+  const careerGoal = sanitizeString(snapshot.careerGoal);
   const skills = uniq([...careerSkills, ...planSkills]).slice(0, 18);
 
   return {
@@ -233,15 +235,15 @@ export const buildProfileSeed = ({ user, careerChoice, careerPlan }) => {
       targetCompanies: [],
       careerGoal,
       interestAreas: splitLooseList(interest),
-      yearsOfExperience: sanitizeString(careerChoice?.experience),
+      yearsOfExperience: sanitizeString(snapshot.experience),
     },
     experience: [],
     projects: [],
-    education: careerChoice?.education
+    education: snapshot.education
       ? [
           {
             school: "",
-            degree: sanitizeString(careerChoice.education),
+            degree: sanitizeString(snapshot.education),
             field: interest,
             startDate: "",
             endDate: "",

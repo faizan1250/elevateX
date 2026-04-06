@@ -47,6 +47,8 @@ router.get(
   requireAuth,
   skillController.regenerateSkillContent,
 );
+router.post("/:id/start", requireAuth, skillController.startSkillFlow);
+router.get("/:id/insights", requireAuth, skillController.getSkillInsights);
 /* ===========================
    SINGLE SKILL
 =========================== */

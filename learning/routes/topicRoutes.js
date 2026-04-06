@@ -12,6 +12,8 @@ router.delete("/:id", requireAuth, topicController.deleteTopic);
 
 // AI-generated summary
 router.get("/:topicId/generate-summary", requireAuth, topicController.generateTopicSummary);
+router.get("/:topicId/mastery-check", requireAuth, topicController.getTopicMasteryCheck);
+router.post("/:topicId/mastery-check/submit", requireAuth, topicController.submitTopicMasteryCheck);
 
 // Progress tracking
 router.post("/progress", requireAuth, topicController.updateProgress);

@@ -1,18 +1,10 @@
 import CareerChoice from "../models/CareerChoice.js";
 import InterviewSession from "../models/InterviewSession.js";
 import { buildSessionAnalytics, buildPortfolioAnalytics } from "./analyticsService.js";
+import { buildCareerSnapshot } from "./careerChoiceService.js";
 import { evaluateQuestionAnswer, generateInterviewPlan } from "./scoringService.js";
 
 const DEFAULT_QUESTION_LIMIT = 5;
-
-const splitSkills = (skills = "") =>
-  String(skills)
-    .split(/[\/,|]/)
-    .map((skill) => skill.trim())
-    .filter(Boolean);
-
-const normalizeText = (value, fallback = "") =>
-  typeof value === "string" ? value.trim() || fallback : fallback;
 
 const deriveQuestionLimit = (experience = "") => {
   const normalized = experience.toLowerCase();
@@ -27,16 +19,6 @@ const deriveQuestionLimit = (experience = "") => {
 
   return DEFAULT_QUESTION_LIMIT;
 };
-
-export const buildCareerSnapshot = (choice) => ({
-  interest: normalizeText(choice?.interest),
-  skills: splitSkills(choice?.skills),
-  education: normalizeText(choice?.education),
-  experience: normalizeText(choice?.experience),
-  careerGoal: normalizeText(choice?.careergoal),
-  availability: normalizeText(choice?.availabilty),
-  timeConstraint: normalizeText(choice?.timeconstraint),
-});
 
 export const getCareerChoiceForInterview = async (userId) => {
   const choice = await CareerChoice.findOne({ userId }).lean();

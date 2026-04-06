@@ -1,0 +1,101 @@
+
+> okay now what are other improvements we can do
+
+
+ The strongest improvements now are not more styling. They're product loops that make this feel inevitable to use.
+
+  1. Add a real first-session flow after Start skill.
+     When a user starts, auto-open the first topic, show a 3-step checklist, and guide them through study -> practice
+     -> prove. Right now the infrastructure exists, but the onboarding path can still feel self-directed in a loose
+     way.
+  2. Add topic summaries and practice blocks before the mastery check.
+     You already generate assessments. Add a structured topic page with:
+
+  - summary
+  - key concepts
+  - mini exercises
+  - "common mistakes"
+  - then assessment
+    This reduces drop-off between "skill started" and "proof submitted".
+
+  3. Add assessment review intelligence.
+     Right now attempts are stored. Next step is to turn review into coaching:
+
+  - "why you missed this"
+  - concept tags per wrong answer
+  - personalized retry set
+  - spaced repetition queue for weak concepts
+
+  4. Add deadline-aware weekly planning.
+     Use the readiness forecast to create:
+
+  - this week's 3 priorities
+  - expected hours needed
+  - risk warning if user is behind
+  - "if you only have 30 mins today, do this"
+    That makes it feel like a real career operating system.
+
+  5. Add a cross-skill "Need-based mode".
+     Let users choose modes like:
+
+  - job interview in 7 days
+  - build portfolio project
+  - learn for internship
+  - revision only
+    Then dynamically reorder topics and skills by purpose, not by static roadmap.
+
+  6. Add project-proof linkage.
+     Each skill should map to:
+
+  - one portfolio artifact
+  - one resume bullet
+  - one interview talking point
+    That is the bridge from "learning" to "career outcome".
+
+  7. Add visible completion mechanics.
+     Users need stronger progression signals:
+
+  - streaks
+  - weekly skill score
+  - mastery milestones
+  - module completion rewards
+  - "proof unlocked" moments
+    Not gamification fluff, just high-signal momentum design.
+
+  8. Add a unified "Review Center".
+     A separate page for:
+
+  - weak topic clusters
+  - failed questions
+  - retry queue
+  - upcoming assessments
+  - concepts likely to decay
+    This becomes one of the most habit-forming surfaces.
+
+  9. Add notifications / nudges.
+     Examples:
+
+  - "You started React but haven't opened Topic 1"
+  - "Your readiness for SQL dropped below target"
+  - "2 retry topics are blocking your forecast"
+    These should be behavior-driven, not generic reminders.
+
+  10. Add admin / observability tools for you.
+     You need internal visibility into:
+
+  - which skills are started but abandoned
+  - topic generation failure rate
+  - assessment completion rate
+  - pass rate by skill
+  - most common weak concepts
+    That's how you tune the product fast enough to matter.
+
+  If I had to choose the next highest-leverage build, I'd do this in order:
+
+  1. First-session flow after Start skill
+  2. Topic study page with summary + practice + assessment
+  3. Review Center with retry queue
+  4. Deadline-aware weekly planner
+
+  If you want, I can implement the first-session flow next and make Start skill land users directly into a complete
+  guided experience instead of just changing state.

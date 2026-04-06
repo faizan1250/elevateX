@@ -346,6 +346,7 @@
 
 // learning/services/aiService.js (ESM, tidy, consistent)
 import { GoogleGenAI } from "@google/genai";
+import { generateJson, generateText, isAiAvailable as sharedAiAvailable } from "../../services/aiService.js";
 
 /* --------------------------- Error type for AI ops -------------------------- */
 export class AIGenerationError extends Error {
@@ -375,7 +376,7 @@ function makeGenAI(apiKey) {
 }
 
 const API_KEY = process.env.GEMINI_API_KEY;
-if (!API_KEY) {
+if (!API_KEY && !sharedAiAvailable()) {
   console.warn("⚠️ GEMINI_API_KEY not set. AI generation will fail with AI_KEY_MISSING.");
 }
 const genAI = makeGenAI(API_KEY);
@@ -447,7 +448,7 @@ const textFrom = (result) => {
 /* ---------------------------- Topics generation ---------------------------- */
 
 export async function generateTopicsForSkill(skillName, difficulty = "intermediate") {
-  if (!genAI) {
+  if (!genAI && !sharedAiAvailable()) {
     throw new AIGenerationError("Missing GEMINI_API_KEY env", "AI_KEY_MISSING", 502);
   }
 
@@ -474,61 +475,24 @@ Required shape:
 `.trim();
 
   try {
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: { skill: { type: "string" }, topics: { type: "array" } },
-          required: ["skill", "topics"]
-        },
-        maxOutputTokens: 2048,
-        temperature: 0.4
-      }
-    });
+    const parsed = await generateJson(
+      prompt,
+      () => ({ skill: skillName, topics: [] }),
+      {
+        systemPrompt:
+          "You are an expert curriculum designer for a premium learning product. Return strict JSON only.",
+      },
+    );
 
-    const text = textFrom(result);
-    if (!text) throw new AIGenerationError("No text response from Gemini", "AI_EMPTY", 502);
-
-    const parsed = extractJson(text);
     if (!parsed || !Array.isArray(parsed.topics) || parsed.topics.length === 0) {
-      throw new AIGenerationError("AI returned non-JSON", "AI_INVALID_JSON", 502, {
-        rawPreview: String(text).slice(0, 500)
-      });
+      throw new AIGenerationError("AI returned non-JSON", "AI_INVALID_JSON", 502);
     }
 
     return parsed;
   } catch (err) {
-    // fallback without schema
-    const result2 = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{
-        role: "user",
-        parts: [{ text: `
-Return ONLY JSON (no markdown, no prose).
-{"skill":"${skillName}","topics":[{"title":"","difficulty":"","objectives":[],"estimated_hours":0}]}
-Fill the JSON fully and validly.
-`.trim() }]
-      }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        maxOutputTokens: 2048,
-        temperature: 0.3
-      }
+    throw new AIGenerationError("AI returned non-JSON", "AI_INVALID_JSON", 502, {
+      rawPreview: String(err?.message || err).slice(0, 500),
     });
-
-    const text2 = textFrom(result2);
-    const parsed2 = extractJson(text2);
-
-    if (!parsed2 || !Array.isArray(parsed2.topics) || parsed2.topics.length === 0) {
-      throw new AIGenerationError("AI returned non-JSON", "AI_INVALID_JSON", 502, {
-        rawPreview: String(text2).slice(0, 500)
-      });
-    }
-
-    return parsed2;
   }
 }
 
@@ -579,7 +543,7 @@ function normalizeMaterial(obj, fallbackTitle, fallbackDifficulty) {
 }
 
 export async function generateSkillMaterial(skillName, difficulty = "intermediate") {
-  if (!genAI) {
+  if (!genAI && !sharedAiAvailable()) {
     throw new AIGenerationError("Missing GEMINI_API_KEY env", "AI_KEY_MISSING", 502);
   }
 
@@ -608,38 +572,27 @@ Input:
 - Difficulty: "${difficulty}"
 `.trim();
 
-  const call = async (temp) =>
-    genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "application/json",
-        maxOutputTokens: 2048,
-        temperature: temp
-      }
-    });
-
   try {
-    const r1 = await call(0.4);
-    const t1 = textFrom(r1);
-    const parsed = safeParseJSON(t1) ?? extractJson(t1);
+    const parsed = await generateJson(
+      prompt,
+      () => null,
+      {
+        systemPrompt:
+          "You create structured learning material for a premium AI learning experience. Return strict JSON only.",
+      },
+    );
     if (!parsed) throw new AIGenerationError("AI returned non-JSON", "AI_NOT_JSON", 502);
     const normalized = normalizeMaterial(parsed, skillName, difficulty);
-    return { normalized, rawJson: parsed, rawText: t1 };
+    return { normalized, rawJson: parsed, rawText: JSON.stringify(parsed) };
   } catch (err) {
-    const r2 = await call(0.3);
-    const t2 = textFrom(r2);
-    const parsed2 = safeParseJSON(t2) ?? extractJson(t2);
-    if (!parsed2) throw err;
-    const normalized2 = normalizeMaterial(parsed2, skillName, difficulty);
-    return { normalized: normalized2, rawJson: parsed2, rawText: t2 };
+    throw new AIGenerationError(err.message || "AI returned non-JSON", "AI_NOT_JSON", 502);
   }
 }
 
 /* ------------------------- Topic summary generation ------------------------- */
 
 export async function generateTopicSummary(topicName, difficulty = "intermediate") {
-  if (!genAI) {
+  if (!genAI && !sharedAiAvailable()) {
     throw new AIGenerationError("Missing GEMINI_API_KEY env", "AI_KEY_MISSING", 502);
   }
 
@@ -659,21 +612,220 @@ Return text in markdown format (no code fences).
 `.trim();
 
   try {
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        responseMimeType: "text/markdown",
-        maxOutputTokens: 1024,
-        temperature: 0.5
-      }
+    const text = await generateText(prompt, {
+      systemPrompt:
+        "You are a concise teaching assistant for a premium learning product. Return clean markdown only.",
     });
-
-    const text = textFrom(result);
     if (!text) throw new AIGenerationError("No text response from Gemini", "AI_EMPTY", 502);
     return text;
   } catch (err) {
     console.error("[AI] Topic summary generation failed:", err);
     throw new AIGenerationError("Failed to generate topic summary", "AI_ERROR", 502, { cause: err.message });
   }
+}
+
+/* ------------------------- Topic mastery generation ------------------------- */
+
+export async function generateTopicMasteryCheck({
+  topicTitle,
+  topicContent = "",
+  skillName = "",
+  difficulty = "intermediate",
+}) {
+  const fallback = {
+    title: `${topicTitle} mastery check`,
+    passingScore: 70,
+    questions: [
+      {
+        id: "q-1",
+        type: "mcq",
+        prompt: `Which statement best describes the core purpose of ${topicTitle}?`,
+        options: [
+          `It helps apply ${topicTitle} correctly in realistic work.`,
+          `It is only theoretical and has no practical impact.`,
+          `It replaces every other concept in ${skillName || "the skill"}.`,
+          `It should be avoided in production systems.`,
+        ],
+        correctAnswer: `It helps apply ${topicTitle} correctly in realistic work.`,
+        explanation: `${topicTitle} matters because it should be used in practical execution, not memorized in isolation.`,
+      },
+      {
+        id: "q-2",
+        type: "mcq",
+        prompt: `What is the strongest sign that you understand ${topicTitle}?`,
+        options: [
+          "You can explain tradeoffs and apply it to a project.",
+          "You have seen the term once.",
+          "You can repeat a definition without context.",
+          "You skip implementation details.",
+        ],
+        correctAnswer: "You can explain tradeoffs and apply it to a project.",
+        explanation: "Real mastery means applied understanding, not surface recall.",
+      },
+      {
+        id: "q-3",
+        type: "mcq",
+        prompt: `When using ${topicTitle}, what should you optimize for first?`,
+        options: [
+          "Correctness and fit for the use case",
+          "Random complexity",
+          "Ignoring requirements",
+          "Copying without understanding",
+        ],
+        correctAnswer: "Correctness and fit for the use case",
+        explanation: "Use-case fit and correctness come before unnecessary complexity.",
+      },
+      {
+        id: "q-4",
+        type: "true_false",
+        prompt: `${topicTitle} should be evaluated in context of constraints and tradeoffs.`,
+        options: ["True", "False"],
+        correctAnswer: "True",
+        explanation: "Applied work requires understanding context, constraints, and tradeoffs.",
+      },
+      {
+        id: "q-5",
+        type: "short_answer",
+        prompt: `In one sentence, describe how you would apply ${topicTitle} inside a real project.`,
+        acceptableAnswers: [
+          "explain how to apply the topic to a realistic project with correctness and tradeoffs",
+        ],
+        explanation: "A strong answer connects the concept to a concrete use case and practical decision-making.",
+      },
+    ],
+  };
+
+  try {
+    return await generateJson(
+      `
+Create a strict JSON mastery check for one learning topic.
+
+Return JSON only:
+{
+  "title": "string",
+  "passingScore": number,
+  "questions": [
+    {
+      "id": "q-1",
+      "type": "mcq|true_false|multi_select|short_answer",
+      "prompt": "string",
+      "options": ["string"],
+      "correctAnswer": "string|[string]",
+      "acceptableAnswers": ["string"],
+      "explanation": "string"
+    }
+  ]
+}
+
+Rules:
+- Create exactly 5 questions.
+- Use this mix when possible: 2 mcq, 1 true_false, 1 multi_select, 1 short_answer.
+- Questions must test understanding, tradeoffs, practical application, and error diagnosis.
+- For mcq questions, provide exactly 4 options and a string correctAnswer.
+- For true_false, provide options ["True","False"] and a string correctAnswer.
+- For multi_select, provide 4-6 options and correctAnswer as an array with 2 or 3 correct options.
+- For short_answer, omit options and provide 2-4 acceptableAnswers that capture the expected idea.
+- Keep language clear and non-trivial.
+- Passing score should be between 60 and 80.
+
+Topic: ${topicTitle}
+Skill: ${skillName}
+Difficulty: ${difficulty}
+Topic content:
+${String(topicContent).slice(0, 5000)}
+      `,
+      () => fallback,
+      {
+        systemPrompt:
+          "You create high-signal mastery checks for a premium AI learning product. Return strict JSON only.",
+      },
+    );
+  } catch {
+    return fallback;
+  }
+}
+
+const normalizeText = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+const normalizeArrayAnswer = (value) => {
+  const list = Array.isArray(value) ? value : [value];
+  return list
+    .map((item) => normalizeText(item))
+    .filter(Boolean)
+    .sort();
+};
+
+const arraysEqual = (left = [], right = []) =>
+  left.length === right.length && left.every((item, index) => item === right[index]);
+
+const isShortAnswerCorrect = (submitted, question) => {
+  const answer = normalizeText(submitted);
+  if (!answer) return false;
+
+  const acceptableAnswers = Array.isArray(question.acceptableAnswers)
+    ? question.acceptableAnswers
+    : [];
+
+  if (acceptableAnswers.some((candidate) => answer.includes(normalizeText(candidate)))) {
+    return true;
+  }
+
+  return acceptableAnswers.some((candidate) =>
+    normalizeText(candidate)
+      .split(" ")
+      .filter(Boolean)
+      .every((token) => answer.includes(token)),
+  );
+};
+
+export function evaluateTopicMasteryCheck(masteryCheck = {}, answers = []) {
+  const questions = Array.isArray(masteryCheck.questions) ? masteryCheck.questions : [];
+  const normalizedAnswers = Array.isArray(answers) ? answers : [];
+
+  const details = questions.map((question) => {
+    const submitted = normalizedAnswers.find((item) => item && item.id === question.id);
+    const selectedAnswer = submitted?.answer ?? "";
+
+    let isCorrect = false;
+    if (question.type === "multi_select") {
+      isCorrect = arraysEqual(
+        normalizeArrayAnswer(selectedAnswer),
+        normalizeArrayAnswer(question.correctAnswer),
+      );
+    } else if (question.type === "short_answer") {
+      isCorrect = isShortAnswerCorrect(selectedAnswer, question);
+    } else {
+      isCorrect = normalizeText(selectedAnswer) === normalizeText(question.correctAnswer);
+    }
+
+    return {
+      id: question.id,
+      type: question.type || "mcq",
+      prompt: question.prompt,
+      selectedAnswer,
+      correctAnswer: question.correctAnswer,
+      isCorrect,
+      explanation: question.explanation || "",
+    };
+  });
+
+  const correctCount = details.filter((item) => item.isCorrect).length;
+  const total = questions.length || 1;
+  const score = Math.round((correctCount / total) * 100);
+  const passingScore = Number(masteryCheck.passingScore) || 70;
+
+  return {
+    score,
+    passingScore,
+    passed: score >= passingScore,
+    correctCount,
+    totalQuestions: questions.length,
+    weakAreas: details.filter((item) => !item.isCorrect).map((item) => item.prompt).slice(0, 3),
+    strengths: details.filter((item) => item.isCorrect).map((item) => item.prompt).slice(0, 3),
+    details,
+  };
 }

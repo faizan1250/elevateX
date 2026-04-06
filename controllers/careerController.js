@@ -5,42 +5,45 @@ import ProjectSubmission from "../models/ProjectSubmission.js";
 import RoadmapProgress from "../models/RoadmapProgress.js";
 import Certificate from "../models/Certificate.js";
 import { bootstrapFromPlanForUser } from "../learning/services/bootstrapService.js";
+import {
+  buildCareerChoiceUpdate,
+  buildCareerSnapshot,
+  toCareerOSProfile,
+} from "../services/careerChoiceService.js";
 import { generateCareerPlan } from "../utils/gemini.js";
+
+const flattenPlanSkills = (skills) => {
+  if (!skills) return [];
+  if (Array.isArray(skills)) return skills.flatMap(flattenPlanSkills);
+  if (typeof skills === "string") return [skills];
+  if (typeof skills === "object") return Object.values(skills).flatMap(flattenPlanSkills);
+  return [];
+};
 
 // ✅ 1. Save career choice
 export const chooseCareer = async (req, res) => {
   try {
     const userId = req.user.id;
-    const {
-      interest,
-      skills,
-      education,
-      experience,
-      careergoal,
-      timeconstraint,
-      availabilty,
-    } = req.body;
+    const updateData = buildCareerChoiceUpdate(req.body, { resetJourney: false });
+    const snapshot = buildCareerSnapshot(updateData);
 
-    // Validation (optional)
-    if (!interest || !skills || !education || !experience || !careergoal || !timeconstraint || !availabilty) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (!snapshot.careerGoal || (!snapshot.interest && snapshot.skills.length === 0)) {
+      return res.status(400).json({
+        message: "Career goal and at least one signal about the user are required",
+      });
     }
 
     const choice = await CareerChoice.findOneAndUpdate(
       { userId },
-      {
-        interest,
-        skills,
-        education,
-        experience,
-        careergoal,
-        timeconstraint,
-        availabilty,
-      },
-      { upsert: true, new: true }
+      { userId, ...updateData },
+      { upsert: true, new: true, setDefaultsOnInsert: true, runValidators: true }
     );
 
-    res.status(201).json({ message: "Career choice saved", choice });
+    res.status(201).json({
+      message: "Career OS profile saved",
+      choice,
+      profile: toCareerOSProfile(choice.toObject ? choice.toObject() : choice),
+    });
   } catch (err) {
     console.error("❌ Error saving career choice:", err);
     res.status(500).json({ message: "Error saving career choice" });
@@ -60,9 +63,12 @@ export const getCareerStatus = async (req, res) => {
 
     if (!choice) return res.status(200).json({ status: 'not_chosen' });
 
+    const rawChoice = choice.toObject ? choice.toObject() : choice;
+
     res.status(200).json({
       status: 'chosen',
       choice,
+      profile: toCareerOSProfile(rawChoice),
       user: choice.userId?.username || 'User'
     });
   } catch (err) {
@@ -97,6 +103,45 @@ export const generatePlan = async (req, res) => {
   { upsert: true, new: true } // 🔥 upsert = create if not exists, new = return updated doc
 );
 
+    if (userChoice) {
+      userChoice.careerJourney = {
+        ...(userChoice.careerJourney?.toObject ? userChoice.careerJourney.toObject() : userChoice.careerJourney),
+        targetRole: planObject.targetRole || userChoice.careerJourney?.targetRole || userChoice.careergoal,
+        estimatedTimeline:
+          Number(planObject?.analytics?.estimatedWeeksToMarketReady) ||
+          userChoice.careerJourney?.estimatedTimeline ||
+          0,
+        milestones: Array.isArray(planObject.milestones) ? planObject.milestones : [],
+      };
+
+      userChoice.growthEngine = {
+        ...(userChoice.growthEngine?.toObject ? userChoice.growthEngine.toObject() : userChoice.growthEngine),
+        weeklyAIBriefing: planObject.weekly_briefing_seed
+          ? [
+              {
+                week: new Date(),
+                summary: planObject.weekly_briefing_seed.summary || "",
+                topWin: planObject.weekly_briefing_seed.topWin || "",
+                suggestedFocus: planObject.weekly_briefing_seed.suggestedFocus || "",
+              },
+            ]
+          : userChoice.growthEngine?.weeklyAIBriefing || [],
+      };
+
+      userChoice.jobIntelligence = {
+        ...(userChoice.jobIntelligence?.toObject ? userChoice.jobIntelligence.toObject() : userChoice.jobIntelligence),
+        marketPulse: {
+          ...(userChoice.jobIntelligence?.marketPulse?.toObject
+            ? userChoice.jobIntelligence.marketPulse.toObject()
+            : userChoice.jobIntelligence?.marketPulse),
+          emergingSkillsNeeded: planObject.market_signals?.emergingSkills || [],
+          lastUpdated: new Date(),
+        },
+      };
+
+      await userChoice.save();
+    }
+
     res.status(201).json({ message: "Career plan generated", plan: saved.plan });
   } catch (err) {
     console.error("❌ AI Gen Error:", err);
@@ -111,8 +156,6 @@ export const getPlan = async (req, res) => {
   try {
     const userId = req.user.id;
     const plan = await CareerPlan.findOne({ userId });
-    console.log("the one i am returning in get method", plan.plan);
-    
     if (!plan) return res.status(404).json({ message: "Plan not found" });
     res.status(200).json(plan.plan);
   } catch (err) {
@@ -147,13 +190,13 @@ export const updateSkill = async (req, res) => {
 export const updateCareerChoice = async (req, res) => {
   try {
     const userId = req.user.id;
-    const updateData = req.body;
+    const updateData = buildCareerChoiceUpdate(req.body, { resetJourney: true });
 
     // Update career choice & reset journeyStarted
     const updated = await CareerChoice.findOneAndUpdate(
       { userId },
       { ...updateData, journeyStarted: false },
-      { new: true }
+      { new: true, runValidators: true }
     );
 
     if (!updated) {
@@ -165,7 +208,8 @@ export const updateCareerChoice = async (req, res) => {
 
     res.status(200).json({ 
       message: "Career choice updated and certificates reset", 
-      choice: updated 
+      choice: updated,
+      profile: toCareerOSProfile(updated.toObject ? updated.toObject() : updated),
     });
   } catch (err) {
     console.error("❌ Error updating career choice:", err);
@@ -388,7 +432,7 @@ export const getProgress = async (req, res) => {
 
     if (!plan) return res.status(404).json({ message: "Plan not found" });
 
-    const totalSkills = plan.plan.skills.length;
+    const totalSkills = flattenPlanSkills(plan.plan.skills).length;
     const completedSkills = skills.filter(s => s.status === "completed").length;
     const totalProjects = plan.plan.projects.length;
     const completedProjects = projects.length;
@@ -524,11 +568,12 @@ export const getJourneyDashboard = async (req, res) => {
     const inProgressSkills = skillProgress?.filter(s => s.status === 'in_progress').length || 0;
     const miniProjects = plan?.plan?.projects?.length || 0;
     const resumeScore = 80;
-    const skills = plan?.plan?.skills || [];
+    const skills = flattenPlanSkills(plan?.plan?.skills || []);
     const allProjects = projects || [];
     const certificates = [];
 
-    const careerGoal = careerChoice?.careergoal || null;
+    const snapshot = buildCareerSnapshot(careerChoice || {});
+    const careerGoal = snapshot.careerGoal || null;
 
     // Always return a valid object, even for new users
     return res.status(200).json({
@@ -539,7 +584,8 @@ export const getJourneyDashboard = async (req, res) => {
       skills,
       projects: allProjects,
       certificates,
-      goal: careerGoal
+      goal: careerGoal,
+      profile: careerChoice ? toCareerOSProfile(careerChoice.toObject ? careerChoice.toObject() : careerChoice) : null,
     });
 
   } catch (err) {
