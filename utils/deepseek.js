@@ -1,12 +1,18 @@
 import OpenAI from "openai";
 import { mockAIResponse } from "./aiWrapper.js";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  : null;
 
 async function generateCareerPlanFromAI(userChoice) {
   try {
+    if (!openai) {
+      return mockAIResponse(userChoice);
+    }
+
     const response = await openai.chat.completions.create({
       model: "gpt-3.5-turbo", // ✅ Use a valid OpenAI model
       messages: [

@@ -1,268 +1,185 @@
-import { GoogleGenAI } from "@google/genai";
-import CareerChoice from "../models/CareerChoice.js";
+import InterviewSession from "../models/InterviewSession.js";
+import {
+  answerInterviewQuestion,
+  completeInterviewSession,
+  createInterviewSession,
+  getCareerChoiceForInterview,
+  getCurrentQuestion,
+  getInterviewOverview,
+} from "../services/interviewService.js";
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+const buildProfileResponse = (snapshot) => ({
+  skills: snapshot.skills,
+  careerGoal: snapshot.careerGoal,
+  experience: snapshot.experience,
+  education: snapshot.education,
+  interest: snapshot.interest,
+  availability: snapshot.availability,
+  timeConstraint: snapshot.timeConstraint,
 });
 
-// ���������������������������������������������
-// Helper: Build profile context
-// ���������������������������������������������
-const buildProfileContext = (choice) => {
-  if (!choice) return "No profile available.";
+const serializeSession = (session) => ({
+  id: session._id,
+  status: session.status,
+  targetRole: session.targetRole,
+  interviewType: session.interviewType,
+  experienceLevel: session.experienceLevel,
+  questionLimit: session.questionLimit,
+  currentQuestionIndex: session.currentQuestionIndex,
+  primarySkills: session.primarySkills,
+  focusAreas: session.focusAreas,
+  startedAt: session.startedAt,
+  completedAt: session.completedAt,
+  planMeta: session.planMeta,
+  currentQuestion: session.status === "active" ? getCurrentQuestion(session) : null,
+  transcript: session.transcript,
+  finalReport: session.finalReport || null,
+});
 
-  const skills = choice.skills
-    ? choice.skills
-        .split("/")
-        .map((s) => s.trim())
-        .join(", ")
-    : "Not specified";
+const getOwnedSession = async (req) => {
+  const session = await InterviewSession.findOne({
+    _id: req.params.id,
+    userId: req.user.id,
+  });
 
-  return `
-Candidate Profile:
-- Username: ${choice.userId?.username || "User"}
-- Skills: ${skills}
-- Career Goal: ${choice.careergoal || "Not specified"}
-- Experience: ${choice.experience || "Not specified"}
-- Education: ${choice.education || "Not specified"}
-- Interest: ${choice.interest || "Not specified"}
-- Availability: ${choice.availabilty || "Not specified"}
-- Time Constraint: ${choice.timeconstraint || "Not specified"}
-`;
+  if (!session) {
+    const error = new Error("Interview session not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  return session;
 };
 
-// ���������������������������������������������
-// GET /api/interview/profile
-// ���������������������������������������������
+const handleInterviewError = (res, error, fallbackMessage) => {
+  console.error(fallbackMessage, error);
+  return res.status(error.statusCode || 500).json({
+    message: error.message || fallbackMessage,
+  });
+};
+
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const { snapshot } = await getCareerChoiceForInterview(req.user.id);
 
-    const choice = await CareerChoice.findOne({ userId }).populate({
-      path: "userId",
-      select: "username",
+    res.status(200).json({
+      status: "chosen",
+      profile: buildProfileResponse(snapshot),
     });
-
-    if (!choice) {
+  } catch (error) {
+    if (error.statusCode === 404) {
       return res.status(200).json({
         status: "not_chosen",
         profile: null,
       });
     }
 
-    const profile = {
-      username: choice.userId?.username || "User",
-      skills: choice.skills
-        ? choice.skills.split("/").map((s) => s.trim())
-        : [],
-      careerGoal: choice.careergoal || "",
-      experience: choice.experience || "",
-      education: choice.education || "",
-      interest: choice.interest || "",
-      availability: choice.availabilty || "",
-      timeConstraint: choice.timeconstraint || "",
-    };
-
-    return res.status(200).json({
-      status: "chosen",
-      profile,
-    });
-  } catch (err) {
-    console.error("Profile fetch error:", err);
-    res.status(500).json({ error: "Failed to load profile" });
+    return handleInterviewError(res, error, "Failed to load interview profile");
   }
 };
 
-// ���������������������������������������������
-// POST /api/interview/chat
-// ���������������������������������������������
-export const interviewChat = async (req, res) => {
-  const { messages } = req.body;
-  const userId = req.user.id;
-
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: "Invalid messages format" });
-  }
-
-  if (messages.length > 40) {
-    return res.status(400).json({ error: "Conversation too long" });
-  }
-
+export const startInterviewSession = async (req, res) => {
   try {
-    // �� Fetch user profile automatically ��
-    const choice = await CareerChoice.findOne({ userId }).populate({
-      path: "userId",
-      select: "username",
+    const session = await createInterviewSession(req.user.id, req.body || {});
+
+    res.status(201).json({
+      message: "Interview session started",
+      session: serializeSession(session),
     });
-
-    const profileContext = buildProfileContext(choice);
-
-    // �� Strong system prompt ��
-    const systemPrompt = `
-You are a strict senior technical interviewer.
-
-Rules:
-- Ask ONE question at a time
-- Do NOT explain unless asked
-- Increase difficulty gradually
-- Focus on practical + real-world problems
-- If candidate is weak  ask fundamentals
-- If strong  ask advanced/system design
-
-${profileContext}
-`;
-
-    // �� Convert messages  Gemini format ��
-    const formattedMessages = messages.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
-
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: systemPrompt }],
-        },
-        ...formattedMessages,
-      ],
-    });
-
-    const text =
-      response?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response generated";
-
-    return res.json({ response: text });
-  } catch (err) {
-    console.error("Gemini API error:", err);
-
-    if (err.status === 429) {
-      return res.status(429).json({ error: "AI rate limit hit, please wait." });
-    }
-
-    res.status(500).json({ error: "AI request failed" });
+  } catch (error) {
+    return handleInterviewError(res, error, "Failed to start interview session");
   }
 };
-export const interviewChatStream = async (req, res) => {
-  const { messages } = req.body;
-  const userId = req.user.id;
 
-  if (!messages || !Array.isArray(messages)) {
-    return res.status(400).json({ error: "Invalid messages format" });
-  }
-
+export const submitInterviewAnswer = async (req, res) => {
   try {
-    // ── Fetch profile ──
-    const choice = await CareerChoice.findOne({ userId }).populate({
-      path: "userId",
-      select: "username",
-    });
+    const rawAnswer =
+      typeof req.body?.answer === "string"
+        ? req.body.answer
+        : typeof req.body?.message === "string"
+          ? req.body.message
+          : "";
+    const answer = rawAnswer.trim();
 
-    const profileContext = buildProfileContext(choice);
-
-    const systemPrompt = `
-You are a strict senior technical interviewer.
-
-Rules:
-- Ask ONE question at a time
-- Be concise
-- Adapt difficulty
-- Focus on real-world
-
-${profileContext}
-`;
-
-    const formattedMessages = messages.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    }));
-
-    // ── Setup SSE ──
-    res.setHeader("Content-Type", "text/event-stream");
-    res.setHeader("Cache-Control", "no-cache");
-    res.setHeader("Connection", "keep-alive");
-
-    const stream = await genAI.models.generateContentStream({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: systemPrompt }],
-        },
-        ...formattedMessages,
-      ],
-    });
-
-    for await (const chunk of stream) {
-      const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (text) {
-        res.write(`data: ${JSON.stringify({ text })}\n\n`);
-      }
+    if (!answer) {
+      return res.status(400).json({ message: "Answer is required" });
     }
 
-    res.write(`data: [DONE]\n\n`);
-    res.end();
-  } catch (err) {
-    console.error("Streaming error:", err);
-    res.end();
+    const session = await getOwnedSession(req);
+
+    if (session.status !== "active") {
+      return res.status(400).json({ message: "Interview session is not active" });
+    }
+
+    const result = await answerInterviewQuestion(session, answer);
+
+    res.status(200).json({
+      message: result.completed
+        ? "Interview completed"
+        : "Answer evaluated and next question generated",
+      evaluation: result.evaluation,
+      nextQuestion: result.nextQuestion,
+      completed: result.completed,
+      finalReport: result.finalReport,
+    });
+  } catch (error) {
+    return handleInterviewError(res, error, "Failed to evaluate interview answer");
   }
 };
-export const evaluateAnswer = async (req, res) => {
-  const { question, answer } = req.body;
 
-  if (!question || !answer) {
-    return res.status(400).json({ error: "Missing question or answer" });
-  }
-
+export const completeSession = async (req, res) => {
   try {
-    const prompt = `
-You are a senior technical interviewer.
+    const session = await getOwnedSession(req);
+    const finalReport = await completeInterviewSession(session);
 
-Evaluate the candidate's answer.
-
-Return STRICT JSON:
-{
-  "score": number (0-10),
-  "strengths": ["..."],
-  "weaknesses": ["..."],
-  "improvement": "..."
-}
-
-Question:
-${question}
-
-Answer:
-${answer}
-`;
-
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
+    res.status(200).json({
+      message: "Interview session completed",
+      finalReport,
     });
+  } catch (error) {
+    return handleInterviewError(res, error, "Failed to complete interview session");
+  }
+};
 
-    const text = response?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+export const getSession = async (req, res) => {
+  try {
+    const session = await getOwnedSession(req);
+    res.status(200).json({ session: serializeSession(session) });
+  } catch (error) {
+    return handleInterviewError(res, error, "Failed to load interview session");
+  }
+};
 
-    let parsed;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = {
-        score: 5,
-        strengths: [],
-        weaknesses: [],
-        improvement: text,
-      };
-    }
+export const getInterviewHistory = async (req, res) => {
+  try {
+    const sessions = await InterviewSession.find({
+      userId: req.user.id,
+      status: "completed",
+    })
+      .sort({ completedAt: -1 })
+      .limit(20);
 
-    return res.json(parsed);
-  } catch (err) {
-    console.error("Evaluation error:", err);
-    res.status(500).json({ error: "Evaluation failed" });
+    res.status(200).json({
+      sessions: sessions.map((session) => ({
+        id: session._id,
+        targetRole: session.targetRole,
+        interviewType: session.interviewType,
+        completedAt: session.completedAt,
+        overallScore: session.finalReport?.overallScore || 0,
+        readiness: session.finalReport?.readiness || "developing",
+        improvementAreas: session.finalReport?.improvementAreas || [],
+      })),
+    });
+  } catch (error) {
+    return handleInterviewError(res, error, "Failed to load interview history");
+  }
+};
+
+export const getInterviewAnalytics = async (req, res) => {
+  try {
+    const analytics = await getInterviewOverview(req.user.id);
+    res.status(200).json({ analytics });
+  } catch (error) {
+    return handleInterviewError(res, error, "Failed to load interview analytics");
   }
 };

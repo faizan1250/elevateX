@@ -2,9 +2,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { mockAIResponse } from "./aiWrapper.js";
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    })
+  : null;
 
 // ✅ Strict default structure for fallback safety
 function defaultPlan(userChoice) {
@@ -50,6 +52,10 @@ function defaultPlan(userChoice) {
 
 export const  generateCareerPlan = async (userChoice) =>{
   try {
+    if (!genAI) {
+      return defaultPlan(userChoice);
+    }
+
     const prompt = `
 You are an **AI Career Mentor, Industry Expert, and Project Manager**.  
 Your job is to generate a **step-by-step, JSON-structured career plan** that is **personalized, actionable, and realistic**.
@@ -151,5 +157,4 @@ ${JSON.stringify(userChoice, null, 2)}
     return defaultPlan(userChoice);
   }
 }
-
 

@@ -56,9 +56,6 @@
   "jest": {
     "testEnvironment": "node",
     "coverageProvider": "v8",
-    "extensionsToTreatAsEsm": [
-      ".js"
-    ],
     "testMatch": [
       "**/test/**/*.test.js"
     ]

@@ -22,7 +22,7 @@ import friendsRoutes from "./routes/friends.js";
 import notificationsRoutes from "./routes/notifications.js";
 import learningRoutes from "./learning/routes/index.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
-import interviewSessionRoutes from "./routes/interviewSessionRoutes.js"
+import interviewSessionRoutes from "./routes/interviewSessionRoutes.js";
 // Swagger
 import setupSwagger from "./swagger.js";
 
@@ -135,3 +135,4 @@ app.use("/api/interview/v1", interviewSessionRoutes);
 setupSwagger(app);
 
 export { app, server };
+export default app;

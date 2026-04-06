@@ -1,8 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const genAI = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const genAI = process.env.GEMINI_API_KEY
+  ? new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    })
+  : null;
 
 /**
  * Generate MCQ-style certification questions from skills
@@ -11,6 +13,10 @@ const genAI = new GoogleGenAI({
  */
 export const generateQuestionsFromSkills = async (skills) => {
   try {
+    if (!genAI) {
+      return [];
+    }
+
     const prompt = `
 You're an AI exam generator. Based on the following technical and soft skills, generate **5 MCQ questions** to test the user's understanding.
 
