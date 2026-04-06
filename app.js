@@ -23,6 +23,7 @@ import notificationsRoutes from "./routes/notifications.js";
 import learningRoutes from "./learning/routes/index.js";
 import interviewRoutes from "./routes/interviewRoutes.js";
 import interviewSessionRoutes from "./routes/interviewSessionRoutes.js";
+import resumeRoutes from "./routes/resumeRoutes.js";
 // Swagger
 import setupSwagger from "./swagger.js";
 
@@ -131,6 +132,7 @@ app.use("/api/learning", learningRoutes);
 app.use("/api/marketplace", marketRouter);
 app.use("/api/interview", interviewRoutes);
 app.use("/api/interview/v1", interviewSessionRoutes);
+app.use("/api/resume", resumeRoutes);
 // SWAGGER
 setupSwagger(app);
 
