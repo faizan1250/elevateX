@@ -1,4 +1,5 @@
 import Notification from "../models/Notification.js";
+import { buildLearningNudgesForUser } from "../learning/controllers/moduleController.js";
 
 // 📌 Get notifications
 export const getNotifications = async (req, res) => {
@@ -62,7 +63,7 @@ export const createNotification = async (req, res) => {
     const sendNotification = req.app.get('sendNotification');
     if (sendNotification) {
       sendNotification(userId, {
-        id: notification._id,
+        _id: notification._id,
         type: notification.type,
         data: notification.data,
         createdAt: notification.createdAt
@@ -73,6 +74,53 @@ export const createNotification = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Error creating notification' });
+  }
+};;
+
+export const syncLearningNotifications = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const nudges = await buildLearningNudgesForUser(userId);
+    const created = [];
+
+    for (const nudge of nudges) {
+      const existing = await Notification.findOne({
+        user: userId,
+        type: "learning_nudge",
+        "data.key": nudge.key,
+      }).lean();
+
+      if (existing) continue;
+
+      const notification = await Notification.create({
+        user: userId,
+        type: "learning_nudge",
+        data: {
+          key: nudge.key,
+          title: nudge.title,
+          message: nudge.message,
+          tone: nudge.tone,
+          link: nudge.link,
+        },
+      });
+
+      created.push(notification);
+
+      const sendNotification = req.app.get("sendNotification");
+      if (sendNotification) {
+        sendNotification(userId, {
+          _id: notification._id,
+          type: notification.type,
+          data: notification.data,
+          createdAt: notification.createdAt,
+        });
+      }
+    }
+
+    res.json({ created: created.length, notifications: created });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error syncing learning notifications" });
   }
 };;
 // 📌 Delete Notification
@@ -90,4 +138,3 @@ export const deleteNotification = async (req, res) => {
     res.status(500).json({ message: 'Error deleting notification' });
   }
 };;
-

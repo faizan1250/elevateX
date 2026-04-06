@@ -6,6 +6,9 @@ import requireAuth from "../../middleware/auth.js";
 // CRUD
 router.post("/", requireAuth, moduleController.createModule);
 router.get("/", requireAuth, moduleController.getModules);
+router.get("/dashboard", requireAuth, moduleController.getLearningDashboard);
+router.get("/ops", requireAuth, moduleController.getLearningOpsDashboard);
+router.post("/:moduleId/precompute", requireAuth, moduleController.precomputeModuleContent);
 router.get("/:moduleId/roadmap", requireAuth, getModuleRoadmap);
 
 router.get("/:id", requireAuth, moduleController.getModule);
