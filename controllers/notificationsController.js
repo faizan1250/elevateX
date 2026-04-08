@@ -32,6 +32,35 @@ export const markAsRead = async (req, res) => {
   }
 };;
 
+export const markManyAsRead = async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter(Boolean) : [];
+
+    if (!ids.length) {
+      return res.status(400).json({ message: "No notification ids provided" });
+    }
+
+    const result = await Notification.updateMany(
+      {
+        _id: { $in: ids },
+        user: req.user.id,
+        status: { $ne: "archived" },
+      },
+      {
+        $set: { status: "read" },
+      },
+    );
+
+    res.json({
+      message: "Notifications marked as read",
+      updatedCount: result.modifiedCount || 0,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error updating notifications" });
+  }
+};;
+
 // 📌 Archive
 export const archiveNotification = async (req, res) => {
   try {

@@ -6,6 +6,7 @@ import auth from "../middleware/auth.js";
 router.get('/', auth, notificationsController.getNotifications);
 router.post('/sync-learning', auth, notificationsController.syncLearningNotifications);
 router.post('/read/:id', auth, notificationsController.markAsRead);
+router.post('/read-many', auth, notificationsController.markManyAsRead);
 router.post('/archive/:id', auth, notificationsController.archiveNotification);
 router.delete('/:id', auth, notificationsController.deleteNotification);
 
